@@ -1,0 +1,8 @@
+Description:
+    Generates a stub ActiveMessaging Tracing Controller.
+
+Examples:
+    ./script/generate tracer Tracer
+    will create:
+        /app/processors/tracer_processor.rb
+        /app/views/tracer/index.rhtml
