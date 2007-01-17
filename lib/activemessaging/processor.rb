@@ -1,3 +1,5 @@
+require 'logger'
+
 module ActiveMessaging
 
   # This is a module so that we can send messages from (for example) web page controllers
@@ -22,6 +24,14 @@ module ActiveMessaging
     include MessageSender
     
     attr_reader :message
+  
+    def logger()
+      @@logger = ActiveMessaging.logger unless defined?(@@logger)
+      unless defined?(@logger)
+        @@logger = Logger.new(STDOUT) 
+      end
+      @@logger
+    end
     
     class<<self
       def subscribes_to queueName
@@ -34,6 +44,8 @@ module ActiveMessaging
     def process!(message)
       @message = message
       on_message(message.body)
+    rescue
+      on_error($!)
     end
 
   end

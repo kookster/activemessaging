@@ -1,21 +1,44 @@
-RAILS_ROOT=File.dirname(__FILE__) + '/../../../'
-load RAILS_ROOT + '/config/environment.rb'
+#!/usr/bin/env ruby
+RAILS_ROOT=File.expand_path(File.join(File.dirname(__FILE__), '..','..','..'))
+load File.join(RAILS_ROOT, 'config', 'environment.rb')
 
-Dir[RAILS_ROOT + '/app/processors/*.rb'].each{|f| puts "Loading #{f}"; load f}
+#make sure stdout and stderr write out without delay for using with daemon like scripts
+STDOUT.sync = true
+STDOUT.flush
 
+STDERR.sync = true
+STDERR.flush
+
+#Load the parent processor.rb, then all child processor classes
+puts "Loading #{RAILS_ROOT + '/app/processors/application.rb'}"; load RAILS_ROOT + '/app/processors/application.rb'
+Dir[RAILS_ROOT + '/app/processors/*_processor.rb'].each{|f| puts "Loading #{f}"; load f}
+
+#see if there are any subscriptions
 if ActiveMessaging::Gateway.subscriptions.empty?
   puts "No subscriptions."
-  puts "Create a file named 'config/subscriptions.rb'."
-  puts "Start with an example by executing:"
-  puts "  cp vendor/plugins/activemessaging/subscriptions.rb.example config/subscriptions.rb (on Mac/Unix)"
-  puts "  copy vendor/plugins/activemessaging/subscriptions.rb.example config/subscriptions.rb (on Windows)"
-  puts "(Yes, I'll handle this better later on.)"
+  puts "If you have no processor classes in app/processors, add them using the command:"
+  puts "  script/generate processor DoSomething"
+  puts "If you have processor classes, make sure they include in the class a call to 'subscribes_to':"
+  puts "  class DoSomethingProcessor < ActiveMessaging::Processor"
+  puts "    subscribes_to :do_something"
   exit
 end
 
 ActiveMessaging::Gateway.subscribe
 puts "=> All subscribed, now polling"
 
-while true
-  ActiveMessaging::Gateway.dispatch_next
+begin
+  while true
+      ActiveMessaging::Gateway.dispatch_next
+  end
+rescue Interrupt
+  puts "\n<<Interrupt received>>\n"  
+rescue
+  puts "#{$!.class.name}:\n #{$!.message}\n\t#{$!.backtrace.join('\n\t')}"
+  raise $!
+ensure
+  puts "Cleaning up..."
+  ActiveMessaging::Gateway.disconnect
+  puts "=> Disconnected from messaging server"
+  puts "=> END"
 end

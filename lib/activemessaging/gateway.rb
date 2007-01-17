@@ -5,17 +5,34 @@ module ActiveMessaging
     @@logger
   end
 
-  def ActiveMessaging.connection  
-    @@connection = ActiveMessaging::Adapters::Stomp::Connection.new({}) unless defined?(@@connection)
+  def ActiveMessaging.connection(configuration={})
+    @@connection = ActiveMessaging::Adapters::Stomp::Connection.new(configuration) unless defined?(@@connection)
     @@connection
+  end
+
+  def ActiveMessaging.disconnect
+    begin
+      unless @@connection.nil?
+        temp_reliable = @@connection.reliable
+        @@connection.reliable = false
+        Gateway.unsubscribe
+        @@connection.disconnect 
+      end
+    rescue
+      puts "=> Error on disconnect: #{$!.message}"
+      raise $!
+    ensure
+      @@connection.reliable = temp_reliable unless @@connection.nil?
+    end
   end
   
   class Gateway
-    cattr_accessor :subscriptions, :named_queues, :filters
+    cattr_accessor :subscriptions, :named_queues, :filters, :connection_configuration
     @@filters = []
     @@subscriptions = []
     @@named_queues = {}
     @@trace_on = nil
+    @@connection_configuration = {}
  
     class <<self
       
@@ -25,12 +42,22 @@ module ActiveMessaging
 
       def subscribe
         subscriptions.each do |subscription|
-          subscription.subscribe(ActiveMessaging.connection)
+          subscription.subscribe(ActiveMessaging.connection(connection_configuration))
         end
       end
 
+      def unsubscribe
+        subscriptions.each do |subscription|
+          subscription.unsubscribe(ActiveMessaging.connection(connection_configuration))
+        end
+      end
+
+      def disconnect
+        ActiveMessaging.disconnect
+      end
+
       def dispatch_next
-        dispatch(ActiveMessaging.connection.receive)
+        dispatch(ActiveMessaging.connection(connection_configuration).receive)
       end
       
       def execute_filter_chain(direction, message, details={})
@@ -46,29 +73,28 @@ module ActiveMessaging
       end
 
       def dispatch(message)
-          case message.command
-            when 'ERROR' 
-              ActiveMessaging.logger.error('Error from messaging infrastructure: ' + message.headers['message'])
-            when 'MESSAGE'
-              sent = false
-              subscriptions.find do |subscription| 
-                if subscription.matches?(message) then
-                  routing = {
-                    :receiver=>subscription.processor_class, 
-                    :queue=>subscription.destination,
-                    :direction => :incoming
-                  }
-                  execute_filter_chain(:in, message, routing) do |m| 
-                    subscription.processor_class.new.process!(m)
-                  end
-                  sent = true
+        case message.command
+          when 'ERROR' 
+            ActiveMessaging.logger.error('Error from messaging infrastructure: ' + message.headers['message'])
+          when 'MESSAGE'
+            sent = false
+            subscriptions.each do |subscription| 
+              if subscription.matches?(message) then
+                routing = {
+                  :receiver=>subscription.processor_class, 
+                  :queue=>subscription.destination,
+                  :direction => :incoming
+                }
+                execute_filter_chain(:in, message, routing) do |m| 
+                  subscription.processor_class.new.process!(m)
                 end
+                sent = true
               end
-              
-              ActiveMessaging.logger.error('No-one responded to ' + message) unless sent
-            else 
-              ActiveMessaging.logger.error('Unknown message command: ' + message.inspect)
-          end
+            end          
+            ActiveMessaging.logger.error('No-one responded to ' + message) unless sent
+          else 
+            ActiveMessaging.logger.error('Unknown message command: ' + message.inspect)
+        end
       end
 
       def define
@@ -102,7 +128,7 @@ module ActiveMessaging
         }
         message = OpenStruct.new(:body => body, :headers => headers)
         execute_filter_chain(:out, message, details) do |message|
-          ActiveMessaging.connection.send real_queue, message.body, message.headers
+          ActiveMessaging.connection(connection_configuration).send real_queue, message.body, message.headers
         end
       end
 
@@ -125,6 +151,11 @@ module ActiveMessaging
     def subscribe(connection)
       puts "=> Subscribing to #{destination} (processed by #{processor_class})"
       connection.subscribe(destination)
+    end
+
+    def unsubscribe(connection)
+      puts "=> Unsubscribing from #{destination} (processed by #{processor_class})"
+      connection.unsubscribe(destination)
     end
   end
   

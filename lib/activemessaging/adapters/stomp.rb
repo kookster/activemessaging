@@ -6,12 +6,17 @@ module ActiveMessaging
     module Stomp
       
       class Connection < ::Stomp::Connection
-        def initialize(configuration)
-          configuration[:login] ||= ""
-          configuration[:passcode] ||= ""
-          configuration[:host] ||= "localhost"
-          configuration[:port] ||= "61613"
-          super(configuration[:login], configuration[:passcode], configuration[:host], configuration[:port].to_i)
+
+        attr_accessor :reliable
+
+        def initialize(cfg)
+          cfg[:login] ||= ""
+          cfg[:passcode] ||= ""
+          cfg[:host] ||= "localhost"
+          cfg[:port] ||= "61613"
+          cfg[:reliable] ||= FALSE
+          cfg[:reconnectDelay] ||= 5
+          super(cfg[:login],cfg[:passcode],cfg[:host],cfg[:port].to_i,cfg[:reliable],cfg[:reconnectDelay])
         end
       end
       
