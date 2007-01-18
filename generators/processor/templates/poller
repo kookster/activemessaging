@@ -1,0 +1,21 @@
+#!/usr/bin/env ruby
+require 'rubygems'
+require 'daemons'
+
+APP_ROOT = File.expand_path(File.dirname(__FILE__) + '/..')
+script_file = File.join(File.expand_path(APP_ROOT),'vendor','plugins','activemessaging','poller.rb')
+tmp_dir = File.join(File.expand_path(APP_ROOT), 'tmp')
+
+options = {
+  :app_name   => "poller",
+  :dir_mode   => :normal,
+  :dir        => tmp_dir,
+  :multiple   => true,
+  :ontop      => false,
+  :mode       => :load,
+  :backtrace  => true,
+  :monitor    => true,
+  :log_output => true
+}
+
+Daemons.run(script_file,options)
