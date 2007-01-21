@@ -1,7 +1,10 @@
 module ActiveMessaging
-  
+
   def ActiveMessaging.logger
     @@logger = ActiveRecord::Base.logger unless defined?(@@logger)
+    unless defined?(@logger)
+      @@logger = Logger.new(STDOUT) 
+    end
     @@logger
   end
 
@@ -22,7 +25,7 @@ module ActiveMessaging
       puts "=> Error on disconnect: #{$!.message}"
       raise $!
     ensure
-      @@connection.reliable = temp_reliable unless @@connection.nil?
+      @@connection.reliable = temp_reliable unless !defined?(@@connection) || @@connection.nil?
     end
   end
   

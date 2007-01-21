@@ -27,9 +27,6 @@ module ActiveMessaging
   
     def logger()
       @@logger = ActiveMessaging.logger unless defined?(@@logger)
-      unless defined?(@logger)
-        @@logger = Logger.new(STDOUT) 
-      end
       @@logger
     end
     

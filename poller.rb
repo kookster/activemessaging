@@ -23,12 +23,13 @@ if ActiveMessaging::Gateway.subscriptions.empty?
   exit
 end
 
-ActiveMessaging::Gateway.subscribe
-puts "=> All subscribed, now polling"
-
 begin
+  ActiveMessaging::Gateway.subscribe
+  puts "=> All subscribed, now polling"
+
   while true
-      ActiveMessaging::Gateway.dispatch_next
+    trap("TERM", "EXIT")
+    ActiveMessaging::Gateway.dispatch_next
   end
 rescue Interrupt
   puts "\n<<Interrupt received>>\n"  
