@@ -149,25 +149,23 @@ module ActiveMessaging
       end
 
       def current_processor_group
-        if ARGV[0] && !@@current_processor_group
-          first_pair = ARGV[0].split('=')
-          if first_pair[0] == 'process-group'
-            group_sym = first_pair[1].to_sym
-            if processor_groups.has_key? group_sym
-              @@current_processor_group = group_sym
-            else
-              puts "Unrecognized process-group."
-              puts "You specified process-group #{first_pair[1]}, make sure this is specified in config/messaging.rb"
-              puts "  ActiveMessaging::Gateway.define do |s|"
-              puts "  s.processor_groups = { :group1 => [:foo_bar1_processor], :group2 => [:foo_bar2_processor] }"
-              puts "  end"
-              exit
+        if ARGV.length > 0 && !@@current_processor_group
+          ARGV.each {|arg|
+            pair = arg.split('=')
+            if pair[0] == 'process-group'
+              group_sym = pair[1].to_sym
+              if processor_groups.has_key? group_sym
+                @@current_processor_group = group_sym
+              else
+                puts "Unrecognized process-group."
+                puts "You specified process-group #{pair[1]}, make sure this is specified in config/messaging.rb"
+                puts "  ActiveMessaging::Gateway.define do |s|"
+                puts "  s.processor_groups = { :group1 => [:foo_bar1_processor], :group2 => [:foo_bar2_processor] }"
+                puts "  end"
+                exit
+              end
             end
-          else
-            puts "Unrecognized option."
-            puts "  Only process-group=foo is acceptable as a command line option."
-            exit
-          end
+          }
         end
         @@current_processor_group
       end
