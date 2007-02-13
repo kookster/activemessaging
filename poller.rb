@@ -5,11 +5,13 @@ STDERR.sync = true; STDERR.flush
 
 #Load the environment and the plugin init
 RAILS_ROOT=File.expand_path(File.join(File.dirname(__FILE__), '..','..','..'))
+
 load File.join(RAILS_ROOT, 'config', 'environment.rb')
 load File.join(RAILS_ROOT, 'config', 'messaging.rb')
 
 #Load the parent processor.rb, then all child processor classes
-puts "Loading #{RAILS_ROOT + '/app/processors/application.rb'}"; load RAILS_ROOT + '/app/processors/application.rb'
+puts "Loading #{RAILS_ROOT + '/app/processors/application.rb'}"; 
+load RAILS_ROOT + '/app/processors/application.rb'
 Dir[RAILS_ROOT + '/app/processors/*_processor.rb'].each{|f| puts "Loading #{f}"; load f}
 
 #See if there are any subscriptions
