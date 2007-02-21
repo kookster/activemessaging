@@ -1,15 +1,15 @@
-module ActiveMessaging
+require 'yaml'
 
+module ActiveMessaging
+  
   def ActiveMessaging.logger
     @@logger = ActiveRecord::Base.logger unless defined?(@@logger)
-    unless defined?(@logger)
-      @@logger = Logger.new(STDOUT) 
-    end
+    @@logger = Logger.new(STDOUT) unless defined?(@logger)
     @@logger
   end
 
   def ActiveMessaging.connection(configuration={})
-    @@connection = ActiveMessaging::Adapters::Stomp::Connection.new(configuration) unless defined?(@@connection)
+    @@connection = Gateway.adapters[configuration[:adapter]].new(configuration) unless defined?(@@connection)
     @@connection
   end
 
@@ -30,16 +30,22 @@ module ActiveMessaging
   end
   
   class Gateway
-    cattr_accessor :subscriptions, :named_queues, :filters, :connection_configuration, :processor_groups
-    @@filters = []
+    cattr_accessor :adapters, :subscriptions, :named_queues, :filters, :connection_configuration, :processor_groups
+    @@adapters = {}
     @@subscriptions = []
     @@named_queues = {}
-    @@trace_on = nil
+    @@filters = []
     @@connection_configuration = {}
     @@processor_groups = {}
+
+    @@trace_on = nil
     @@current_processor_group = nil
  
     class <<self
+      
+      def register_adapter adapter_name, adapter_class
+        adapters[adapter_name] = adapter_class
+      end
       
       def filter filter, options = {}
         filters << filter
@@ -87,7 +93,7 @@ module ActiveMessaging
               if subscription.matches?(message) then
                 routing = {
                   :receiver=>subscription.processor_class, 
-                  :queue=>subscription.destination,
+                  :queue=>subscription.queue,
                   :direction => :incoming
                 }
                 execute_filter_chain(:in, message, routing) do |m| 
@@ -103,11 +109,15 @@ module ActiveMessaging
       end
 
       def define
+        #load the yaml broker file to get connection_configuration
+        load_connection_configuration
+
+        #run the rest of messaging.rb
         yield self
       end
       
-      def queue queue_name, queue
-        named_queues[queue_name] = queue
+      def queue queue_name, queue, publish_headers={}
+        named_queues[queue_name] = Queue.new queue_name, queue, publish_headers
       end
       
       def find_queue queue_name
@@ -120,10 +130,10 @@ module ActiveMessaging
         @@trace_on = queue
       end
 
-      def subscribe_to queue_name, processor
+      def subscribe_to queue_name, processor, headers={}
         proc_sym = processor.name.underscore.to_sym
         if (!current_processor_group || processor_groups[current_processor_group].include?(proc_sym))
-          subscriptions << Subscription.new(find_queue(queue_name), processor)
+          subscriptions << Subscription.new(find_queue(queue_name), processor, headers)
         end
       end
 
@@ -134,9 +144,9 @@ module ActiveMessaging
           :queue => real_queue,
           :direction => :outgoing
         }
-        message = OpenStruct.new(:body => body, :headers => headers)
+        message = OpenStruct.new(:body => body, :headers => headers.reverse_merge(real_queue.publish_headers))
         execute_filter_chain(:out, message, details) do |message|
-          ActiveMessaging.connection(connection_configuration).send real_queue, message.body, message.headers
+          ActiveMessaging.connection(connection_configuration).send real_queue.destination, message.body, message.headers
         end
       end
 
@@ -170,31 +180,50 @@ module ActiveMessaging
         @@current_processor_group
       end
       
+      def load_connection_configuration
+        broker_config = YAML.load_file(File.join(RAILS_ROOT, 'config', 'broker.yml'))
+        config = broker_config[RAILS_ENV].symbolize_keys
+        config[:adapter] = config[:adapter].to_sym if config[:adapter]
+        config[:adapter] ||= :stomp
+        @@connection_configuration = config
+      end
+      
     end
 
   end
   
   class Subscription
-    attr_reader :destination
-    attr_reader :processor_class
-    
-    def initialize(destination, processor_class, options = {})
-      @destination, @processor_class, @options = destination, processor_class, options
+    attr_accessor :queue, :processor_class, :subscribe_headers
+        
+    def initialize(queue, processor_class, subscribe_headers = {})
+      @queue, @processor_class, @subscribe_headers = queue, processor_class, subscribe_headers
+      subscribe_headers['id'] = processor_class.name.underscore unless subscribe_headers.key? 'id'
     end
     
     def matches?(message)
-      message.headers['destination'].to_s == destination.to_s
+      message.headers['destination'].to_s == queue.destination.to_s
     end
     
     def subscribe(connection)
-      puts "=> Subscribing to #{destination} (processed by #{processor_class})"
-      connection.subscribe(destination)
+      puts "=> Subscribing to #{queue.destination} (processed by #{processor_class})"
+      connection.subscribe(queue.destination, subscribe_headers) 
     end
 
     def unsubscribe(connection)
-      puts "=> Unsubscribing from #{destination} (processed by #{processor_class})"
-      connection.unsubscribe(destination)
+      puts "=> Unsubscribing from #{queue.destination} (processed by #{processor_class})"
+      connection.unsubscribe(queue.destination, subscribe_headers)
     end
   end
   
-end
+  class Queue
+    DEFAULT_PUBLISH_HEADERS = { :persistent=>true }
+
+    attr_accessor :name, :destination, :publish_headers
+
+    def initialize(name, destination, publish_headers = {})
+      @name, @destination, @publish_headers = name, destination, publish_headers
+      @publish_headers.reverse_merge! DEFAULT_PUBLISH_HEADERS
+    end
+  end
+
+end #module

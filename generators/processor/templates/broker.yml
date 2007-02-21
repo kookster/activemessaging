@@ -1,0 +1,30 @@
+#
+# simple yaml file for the env specific configuration of the connection configuration
+# listed here on generation are the defaults - amy of these can be removed safely, but by listing them it documents possible
+# configuration parameters for the broker connection
+#
+development:
+    adapter: stomp
+    login: ""
+    passcode: ""
+    host: localhost
+    port: 61613
+    reliable: true
+    reconnectDelay: 5
+
+test:
+    adapter: stomp
+    login: ""
+    passcode: ""
+    host: localhost
+    port: 61613
+    reliable: false
+
+production:
+    adapter: stomp
+    login: ""
+    passcode: ""
+    host: localhost
+    port: 61613
+    reliable: true
+    reconnectDelay: 5

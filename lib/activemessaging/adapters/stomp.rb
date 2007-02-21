@@ -4,8 +4,10 @@ require 'stomp'
 module ActiveMessaging
   module Adapters
     module Stomp
-      
+
       class Connection < ::Stomp::Connection
+        include ActiveMessaging::Adapter
+        register :stomp
 
         attr_accessor :reliable
 

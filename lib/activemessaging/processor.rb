@@ -31,8 +31,8 @@ module ActiveMessaging
     end
     
     class<<self
-      def subscribes_to queueName
-        Gateway.subscribe_to queueName, self
+      def subscribes_to queueName, headers={}
+        Gateway.subscribe_to queueName, headers
       end
     end
     
