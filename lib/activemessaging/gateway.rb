@@ -83,7 +83,14 @@ module ActiveMessaging
         yield(message)
       end
 
+      def prepare_application
+        puts "Calling verify_active_connections!"
+        ActiveRecord::Base.verify_active_connections!
+        puts "Called verify_active_connections"
+      end
+
       def dispatch(message)
+        prepare_application
         case message.command
           when 'ERROR' 
             ActiveMessaging.logger.error('Error from messaging infrastructure: ' + message.headers['message'])
