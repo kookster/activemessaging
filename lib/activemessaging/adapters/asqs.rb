@@ -28,8 +28,8 @@ module ActiveMessaging
             @port = cfg[:port]                          || 80
             @poll_interval = cfg[:poll_interval]        || 1
             @cache_queue_list = cfg[:cache_queue_list]  || true
-            @reliable = cfg[:reliable] ||= FALSE
-            @reconnectDelay = cfg[:reconnectDelay] ||= 5
+            @reliable = cfg[:reliable]                  ||= true
+            @reconnectDelay = cfg[:reconnectDelay]      ||= 5
             
             #initialize the subscriptions and queues
             @subscriptions = {}
@@ -182,8 +182,8 @@ module ActiveMessaging
             end
           rescue
             raise $! unless reliable
-            puts "transmit failed, will retry in 5 seconds"
-            sleep 5
+            puts "transmit failed, will retry in #{@reconnectDelay} seconds"
+            sleep @reconnectDelay
           end
           # p response
           # puts "body: #{response.http_response.body}"
