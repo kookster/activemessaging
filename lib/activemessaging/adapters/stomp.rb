@@ -20,6 +20,10 @@ module ActiveMessaging
           cfg[:reconnectDelay] ||= 5
           super(cfg[:login],cfg[:passcode],cfg[:host],cfg[:port].to_i,cfg[:reliable],cfg[:reconnectDelay])
         end
+        
+        def received message
+        end
+        
       end
       
     end

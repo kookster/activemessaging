@@ -20,7 +20,6 @@ module ActiveMessaging
   end
 
   class Processor
-    include Reloadable::Subclasses
     include MessageSender
     
     attr_reader :message
