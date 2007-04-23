@@ -7,8 +7,8 @@ STDERR.sync = true; STDERR.flush
 RAILS_ROOT=File.expand_path(File.join(File.dirname(__FILE__), '..','..','..'))
 load File.join(RAILS_ROOT, 'config', 'environment.rb')
 
-# Load ActiveMessaging
-ActiveMessaging::load_activemessaging
+# Load ActiveMessaging processors
+ActiveMessaging::load_processors
 
 # Start it up!
 ActiveMessaging::start

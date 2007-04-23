@@ -35,21 +35,29 @@ module ActiveMessaging
     Dir[RAILS_ROOT + '/app/processors/*_processor.rb'].each{|f| puts "Loading #{f}" if verbose; load f}
   end
 
+  def self.reload_activemessaging
+    load_config
+    load_processors(false)
+  end
+
   def self.load_activemessaging
     load_extensions
     load_config
     load_processors
   end
-
 end
 
 #load these once to start with
 ActiveMessaging.load_extensions
+ActiveMessaging.load_config
 
 #load these on each request - leveraging Dispatcher semantics for consistency
 require 'dispatcher' unless defined?(::Dispatcher)
-::Dispatcher.to_prepare :activemessaging do
-  base = File.dirname(__FILE__)
-  ActiveMessaging.load_config
-  ActiveMessaging.load_processors(false)
+
+# add processors and config to on_prepare if supported (rails 1.2+)
+if ::Dispatcher.respond_to? :to_prepare
+  ::Dispatcher.to_prepare :activemessaging do
+    base = File.dirname(__FILE__)
+    ActiveMessaging.reload_activemessaging
+  end
 end
