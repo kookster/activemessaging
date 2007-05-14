@@ -23,12 +23,12 @@ module ActiveMessaging
         def subscribe queue_name, subscribe_headers={}
           open_queue queue_name
           unless @subscriptions.find {|s| s.name == queue_name} 
-            @subscriptions << Subscription.new(queue_name, headers)
+            @subscriptions << Subscription.new(queue_name, subscribe_headers)
           end
         end
         
         def unsubscribe queue_name, unsubscribe_headers={}
-          @subscriptions.delete_if {|s| s.nme == queue_name}
+          @subscriptions.delete_if {|s| s.name == queue_name}
         end
         
         def send queue_name, message_body, message_headers={}
@@ -41,7 +41,7 @@ module ActiveMessaging
           queue = @queues.find do |q|
             find_subscription(q.name) && !q.empty?
           end
-          queue.receive
+          queue.receive unless queue.nil?
         end
         
         def received message
