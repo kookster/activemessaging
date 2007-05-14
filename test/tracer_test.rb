@@ -1,7 +1,7 @@
 require File.dirname(__FILE__) + '/test_helper'
 
 class TestProcessor < ActiveMessaging::Processor
-  subscribes_to :hello_world
+  #subscribes_to :hello_world
 
   def on_message message
     #do nothing
@@ -9,8 +9,20 @@ class TestProcessor < ActiveMessaging::Processor
 end
 
 class TestSender < ActiveMessaging::Processor
-  publishes_to :hello_world
+  #publishes_to :hello_world
 
+end
+
+class FakeMessage
+  def command
+    'MESSAGE'
+  end
+  def headers
+    {'destination'=>'/queue/helloWorld'}
+  end
+  def body
+    "Ni hao ma?"
+  end
 end
 
 class TracerTest < Test::Unit::TestCase
@@ -22,45 +34,30 @@ class TracerTest < Test::Unit::TestCase
 
       s.filter TraceFilter.new(:trace)
     end
-    ActiveMessaging.connection.reset!
+    
+    TestProcessor.subscribes_to :hello_world
+    TestSender.publishes_to :hello_world
+  end
+
+  def teardown
+    ActiveMessaging::Gateway.reset
   end
 
   def test_should_trace_sent_messages
     message = "Ni hao ma?"
 
-    expect_message :trace, "<sent><from>TestSender</from><queue>hello_world</queue><message>#{message}</message></sent>"
-    expect_message :hello_world, message
-
     sender = TestSender.new
     sender.publish :hello_world, message
 
-    verify_messages
-  end
-
-  class FakeMessage
-    def command
-      'MESSAGE'
-    end
-    def headers
-      {'destination'=>:hello_world}
-    end
-    def body
-      "Ni hao ma?"
-    end
+    assert_message :trace, "<sent><from>TestSender</from><queue>hello_world</queue><message>#{message}</message></sent>"
+    assert_message :hello_world, message
   end
 
   def test_should_trace_received_messages
     message = "Ni hao ma?"
-    
-    expect_message :trace, "<received><by>TestProcessor</by><queue>hello_world</queue><message>#{message}</message></received>"
 
     ActiveMessaging::Gateway.dispatch FakeMessage.new
-    
-    verify_messages
-  end
 
-  def tear_down
-    puts 'calling'
-    ActiveMessaging::Gateway.reset
+    assert_message :trace, "<received><by>TestProcessor</by><queue>hello_world</queue><message>#{message}</message></received>"
   end
 end

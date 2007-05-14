@@ -10,11 +10,15 @@ class ConfigTest < Test::Unit::TestCase
       s.queue :hello_world, '/queue/helloWorld'
     end
   end
+  
+  def teardown
+    ActiveMessaging::Gateway.reset
+  end
 
   def test_can_subscribe_to_named_queue
     TestProcessor.subscribes_to :hello_world
-    sub = ActiveMessaging::Gateway.subscriptions.last
-    assert_equal :hello_world, sub.destination
+    sub = ActiveMessaging::Gateway.subscriptions.values.last
+    assert_equal :hello_world, sub.queue.name
     assert_equal TestProcessor, sub.processor_class
   end
 

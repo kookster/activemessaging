@@ -4,43 +4,14 @@ require "#{File.dirname(__FILE__)}/trace_filter"
 
 module ActiveMessaging #:nodoc:
 
-  class MockConnection
-    attr_reader :sent
-
-    def initialize
-      reset!
-    end
-
-    def send queue, message, headers = {}
-      @sent << [queue, message, headers]
-    end
-    
-    def reset!
-      @sent = []
-    end
-
-  end
-
-  def ActiveMessaging.connection  
-    @@connection = MockConnection.new unless defined?(@@connection)
-    @@connection
-  end
-
-  def ActiveMessaging.sent
-    @@connection = MockConnection.new unless defined?(@@connection)
-    @@connection.sent
-  end
-
   class Gateway
-    def self.find_queue q
-      q
-    end
-
+  
     def self.reset
       @@filters = []
-      @@subscriptions = []
+      @@subscriptions = {}
       @@named_queues = {}
       @@trace_on = nil
+      connection('default').disconnect
     end
     
   end
@@ -66,50 +37,80 @@ module Test
   module Unit
     class TestCase #:nodoc:
 
-      def expect_message q, message, headers={}
-        @expected_messages = [] if @expected_messages.nil?
-        @expected_messages << [q, message, headers]
+      def assert_message queue, body
+        queue = ActiveMessaging::Gateway.find_queue(queue).destination
+        error_message = <<-"end_assert_message"
+        Message for '#{queue}' with '#{body}' is not present.
+        Messages:
+        #{ActiveMessaging::Gateway.connection('default').all_messages.inspect}
+        end_assert_message
+        assert ActiveMessaging::Gateway.connection.find_message(queue, body), error_message
+      end
+      
+      def assert_no_message queue, body
+        queue = ActiveMessaging::Gateway.find_queue(queue).destination
+        error_message = <<-"end_assert_message"
+        Message for '#{queue}' with '#{body}' is present.
+        Messages:
+        #{ActiveMessaging::Gateway.connection('default').all_messages.inspect}
+        end_assert_message
+        assert_nil ActiveMessaging::Gateway.connection('default').find_message(queue, body), error_message
       end
 
-      def verify_messages
-        raise "You must set up some expected messages before calling verify_messages" if @expected_messages.nil?
-        @expected_messages.each do |m|
-          error_message = <<-"end_assert_message"
-          Expected message #{m} was not received.
-          Received messages:
-          [#{ActiveMessaging.sent.join('/')}]
-          end_assert_message
-          assert ActiveMessaging.sent.member?(m), error_message 
-        end
+      def assert_no_messages queue, body
+        queue = ActiveMessaging::Gateway.find_queue(queue).destination
+        error_message = <<-"end_assert_message"
+        Expected no messages.
+        Messages:
+        #{ActiveMessaging::Gateway.connection('default').all_messages.inspect}
+        end_assert_message
+        assert_equal [], ActiveMessaging::Gateway.connection('default').all_messages, error_message
       end
-
-      def verify_only_expected_messages
-        raise "You must set up some expected messages before calling verify_messages" if @expected_messages.nil?
-        @expected_messages.each do |m|
-          error_message = <<-"end_assert_message"
-          Expected message #{m} was not received.
-          Received messages:
-          [#{ActiveMessaging.sent.join('/')}]
-          end_assert_message
-          assert ActiveMessaging.sent.member?(m), error_message
-          ActiveMessaging.sent.delete m
-        end
-        
-        assert_equal [], ActiveMessaging.sent
+      
+      def assert_subscribed queue
+        queue = ActiveMessaging::Gateway.find_queue(queue).destination
+        error_message = <<-"end_assert_message"
+        Not subscribed to #{queue}.
+        Subscriptions:
+        #{ActiveMessaging::Gateway.connection('default').subscriptions.inspect}
+        end_assert_message
+        assert ActiveMessaging::Gateway.connection('default').find_subscription(queue), error_message
       end
-
-      def verify_no_messages
-        if ActiveMessaging.sent !=[] then
-          error_message = <<-"end_assert_message"
-          Expected no messages.
-          Received messages:
-          [#{ActiveMessaging.sent.join('/')}]
-          end_assert_message
-          fail error_message
-        end
+      
+      def assert_not_subscribed queue
+        queue = ActiveMessaging::Gateway.find_queue(queue).destination
+        error_message = <<-"end_assert_message"
+        Subscribed to #{queue}.
+        Subscriptions:
+        #{ActiveMessaging::Gateway.connection('default').subscriptions.inspect}
+        end_assert_message
+        assert_nil ActiveMessaging::Gateway.connection('default').find_subscription(queue), error_message
       end
-
+      
+      def assert_messages_for queue_name
+        queue_name = ActiveMessaging::Gateway.find_queue(queue).destination
+        error_message = <<-"end_assert_message"
+        No messages for #{queue_name}.
+        All messages:
+        #{ActiveMessaging::Gateway.connection('default').all_messages.inspect}
+        end_assert_message
+        queue = ActiveMessaging::Gateway.connection('default').find_queue queue_name
+        assert !queue.nil? && !queue.messages.empty?, error_message
+      end
+      
+      def assert_no_messages_for queue_name
+        queue_name = ActiveMessaging::Gateway.find_queue(queue).destination
+        error_message = <<-"end_assert_message"
+        #{queue_name} has messages.
+        Messages in queue:
+        #{ActiveMessaging::Gateway.connection('default').find_queue(queue_name).messages.inspect}
+        end_assert_message
+        queue = ActiveMessaging::Gateway.connection('default').find_queue queue_name
+        assert queue.nil? || queue.messages.empty?, error_message
+      end
     end
   end
 end
+
+
 

@@ -122,7 +122,7 @@ module ActiveMessaging
         disconnect
       end
       
-      def connection broker_name
+      def connection broker_name='default'
         return @@connections[broker_name] if @@connections.has_key?(broker_name)
         config = load_connection_configuration(broker_name)
         @@connections[broker_name] = Gateway.adapters[config[:adapter]].new(config)
@@ -133,7 +133,8 @@ module ActiveMessaging
       end
       
       def filter filter, options = {}
-        filters << filter
+        options[:direction] = :bidirectional if options[:direction].nil?
+        filters << [filter, options]
       end
       
       def subscribe
@@ -153,13 +154,14 @@ module ActiveMessaging
       end
       
       def execute_filter_chain(direction, message, details={})
-        filters.each do |filter|
-          continue = callcc do |cont|
-            filter.process(message, details){|| cont.call(true)}
-            # if the filter doesn't yield we shouldn't continue the processing of the message
-            cont.call(false)
-          end
-          return unless continue
+        filters.each do |filter, options|
+            if direction.to_sym == options[:direction] || options[:direction] == :bidirectional
+              exit_flag = true
+              filter.process(message, details) do 
+                exit_flag = false
+              end
+              return if exit_flag
+            end
         end
         yield(message)
       end
@@ -240,7 +242,7 @@ module ActiveMessaging
         proc_name = processor.name.underscore
         proc_sym = processor.name.underscore.to_sym
         if (!current_processor_group || processor_groups[current_processor_group].include?(proc_sym))
-          subscriptions["#{proc_name}:#{queue_name}"]= Subscription.new(find_queue(queue_name), processor, headers)
+          @@subscriptions["#{proc_name}:#{queue_name}"]= Subscription.new(find_queue(queue_name), processor, headers)
         end
       end
 
@@ -312,7 +314,7 @@ module ActiveMessaging
     end
     
     def matches?(message)
-      message.headers['destination'].to_s == queue.destination.to_s
+      message.headers['destination'].to_s == @queue.destination.to_s
     end
     
     def subscribe

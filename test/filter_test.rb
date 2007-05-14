@@ -12,6 +12,7 @@ class FilterTest < Test::Unit::TestCase
     end
     
     def process(message, details={})
+
       @was_called = true
       @details=details
       yield
@@ -19,7 +20,7 @@ class FilterTest < Test::Unit::TestCase
 
     def assert_was_called
       assert @was_called, "#{name} should have been called"
-      @was_called = false
+      #@was_called = false
     end
     
     def assert_was_not_called
@@ -31,19 +32,11 @@ class FilterTest < Test::Unit::TestCase
     end
   end
 
-  ActiveMessaging::Gateway.define do |d|
-    d.queue :testqueue, 'testqueue'
-    
-    d.filter MockFilter.new(:bidirectional)
-    d.filter MockFilter.new(:incoming), :direction => :in
-    d.filter MockFilter.new(:outgoing), :direction => :out
-  end
-
   class TestProcessor < ActiveMessaging::Processor
     include ActiveMessaging::MessageSender
-    subscribes_to :testqueue
+    #subscribes_to :testqueue
     
-    @@was_called = true
+    @@was_called = false
     class<<self
       include Test::Unit::Assertions
       
@@ -54,12 +47,23 @@ class FilterTest < Test::Unit::TestCase
     end
     
     def on_message(message)
+      puts "TEST PROCESSOR EXECUTING"
       @@was_called = true
     end
   end
   
   def setup
-    @bidirectional, @incoming, @outgoing = ActiveMessaging::Gateway.filters
+    ActiveMessaging::Gateway.define do |d|
+      d.queue :testqueue, 'testqueue'
+      
+      d.filter MockFilter.new(:bidirectional)
+      d.filter MockFilter.new(:incoming), :direction => :in
+      d.filter MockFilter.new(:outgoing), :direction => :out
+    end
+    
+    TestProcessor.subscribes_to :testqueue
+    
+    @bidirectional, @incoming, @outgoing = ActiveMessaging::Gateway.filters.map {|f,o| f }
     
     # just checking we got the right filters
     assert_equal :bidirectional, @bidirectional.name
@@ -67,20 +71,22 @@ class FilterTest < Test::Unit::TestCase
     assert_equal :outgoing, @outgoing.name
   end
 
+  def teardown
+    ActiveMessaging::Gateway.reset
+  end
+
   def test_filters_and_processor_gets_called_on_receive
     ActiveMessaging::Gateway.dispatch ActiveMessaging::TestMessage.new('testqueue')
     @bidirectional.assert_was_called
     @incoming.assert_was_called
-    # TODO conditional not yet implemented
-    #@outgoing.assert_was_not_called
+    @outgoing.assert_was_not_called
     TestProcessor.assert_was_called
   end
   
   def test_filters_gets_called_on_publish
     ActiveMessaging::Gateway.publish :testqueue, "blah blah"
     @bidirectional.assert_was_called
-    # TODO conditional not yet implemented
-    #@incoming.assert_was_not_called
+    @incoming.assert_was_not_called
     @outgoing.assert_was_called
   end
 
@@ -89,14 +95,15 @@ class FilterTest < Test::Unit::TestCase
     sender.publish :testqueue, "Hi there!"
 
     @outgoing.assert_was_called
-    @outgoing.assert_routing({:queue=>:testqueue, :publisher=>FilterTest::TestProcessor, :direction=>:outgoing})
+    @outgoing.assert_routing({:queue=>ActiveMessaging::Gateway.find_queue(:testqueue), :publisher=>FilterTest::TestProcessor, :direction=>:outgoing})
   end
 
   def test_sets_routing_details_on_receive
     ActiveMessaging::Gateway.dispatch ActiveMessaging::TestMessage.new('testqueue')
 
     @incoming.assert_was_called
-    @incoming.assert_routing({:queue=>:testqueue, :receiver=>FilterTest::TestProcessor, :direction=>:incoming})
+    @incoming.assert_routing({:queue=>ActiveMessaging::Gateway.find_queue(:testqueue), :receiver=>FilterTest::TestProcessor, :direction=>:incoming})
   end
 
+  
 end

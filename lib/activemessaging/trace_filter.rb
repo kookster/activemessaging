@@ -8,17 +8,18 @@ class TraceFilter
   
   def process message, routing
     
-    puts "Trace: direction = #{routing[:direction]} publisher=#{routing[:publisher]} queue=#{routing[:queue].name} @queue=#{@queue}"
-    
-    unless ( routing[:queue].name==ActiveMessaging::Gateway.find_queue(@queue) ) then
-      if routing[:direction]==:outgoing then
+    unless ( routing[:queue].name == @queue ) then
+      puts "Trace: direction = #{routing[:direction]} publisher=#{routing[:publisher]} queue=#{routing[:queue].name} @queue=#{@queue}"
+      if routing[:direction].to_sym==:outgoing then
+        "trace from outgoing"
         publish @queue, "<sent>"+
                         "<from>#{routing[:publisher]}</from>" +        
                         "<queue>#{routing[:queue].name}</queue>" +
                         "<message>#{message.body}</message>" + 
                         "</sent>"
       end
-      if routing[:direction]==:incoming then
+      if routing[:direction].to_sym==:incoming then
+        "trace from incoming"
         publish @queue, "<received>"+
                         "<by>#{routing[:receiver]}</by>" +        
                         "<queue>#{routing[:queue].name}</queue>" +
