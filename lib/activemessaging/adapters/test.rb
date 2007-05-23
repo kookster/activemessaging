@@ -74,7 +74,7 @@ module ActiveMessaging
         end
       end
       
-      class Queue < ActiveMessaging::Adapters::Base::Queue
+      class Queue
         
         attr_accessor :name, :messages
         
@@ -94,7 +94,10 @@ module ActiveMessaging
         def empty?
           @messages.empty?
         end
-      
+        
+        def to_s
+          "<Test::Queue name='#{name}'>"
+        end
       end
       
       class Subscription
