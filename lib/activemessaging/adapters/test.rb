@@ -113,7 +113,17 @@ module ActiveMessaging
         end
       end
       
-      class Message < ActiveMessaging::Adapters::Base::Message
+      class Message
+        attr_accessor :headers, :body, :command
+        
+        def initialize headers, id, body, response, queue, command='MESSAGE'
+          @headers, @body, @command =  headers, body, command
+          headers['destination'] = queue.name
+        end
+      
+        def to_s
+          "<Test::Message body='#{body}' headers='#{headers.inspect}' command='#{command}' >"
+        end
       end
     end
   end
