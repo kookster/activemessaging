@@ -51,7 +51,7 @@ class FilterTest < Test::Unit::TestCase
       @@was_called = true
     end
   end
-  
+  include ActiveMessaging::TestHelper
   def setup
     ActiveMessaging::Gateway.define do |d|
       d.queue :testqueue, 'testqueue'

@@ -13,7 +13,7 @@ development:
     reconnectDelay: 5
 
 test:
-    adapter: stomp
+    adapter: test
     login: ""
     passcode: ""
     host: localhost

@@ -14,6 +14,7 @@ module ActiveMessaging
     Dir[RAILS_ROOT + '/vendor/plugins/activemessaging/lib/activemessaging/adapters/*.rb'].each{|a| 
       begin
         adapter_name = File.basename(a, ".rb")
+        puts "Loading #{adapter_name}"
         require 'activemessaging/adapters/' + adapter_name
       rescue RuntimeError, LoadError => e
         warn "Adapter #{adapter_name} not loaded: #{ e.message }"

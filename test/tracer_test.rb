@@ -26,7 +26,7 @@ class FakeMessage
 end
 
 class TracerTest < Test::Unit::TestCase
-
+  include ActiveMessaging::TestHelper
   def setup
     ActiveMessaging::Gateway.define do |s|
       s.queue :hello_world, '/queue/helloWorld'
