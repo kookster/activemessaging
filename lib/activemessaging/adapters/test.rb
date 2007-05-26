@@ -35,6 +35,7 @@ module ActiveMessaging
         def send queue_name, message_body, message_headers={}
           open_queue queue_name
           queue = find_queue queue_name
+          puts "sending to #{queue}"
           queue.send Message.new(message_headers, nil, message_body, nil, queue)
         end
         
@@ -46,9 +47,13 @@ module ActiveMessaging
         end
         
         def receive queue_name, headers={}
+          puts "queues = #{@queues.inspect}"
+          puts "queue_name = #{queue_name}"
           subscribe queue_name, headers
           queue = find_queue queue_name
+          puts "queue = #{queue}"
           message = queue.receive
+          puts "message = #{message}"
           unsubscribe queue_name, headers
           message
         end
@@ -71,7 +76,7 @@ module ActiveMessaging
         end
         
         def find_queue queue_name
-          @queues.find{|q| q.name = queue_name }
+          @queues.find{|q| q.name == queue_name }
         end
         
         def find_subscription queue_name
@@ -105,7 +110,7 @@ module ActiveMessaging
         end
         
         def to_s
-          "<Test::Queue name='#{name}'>"
+          "<Test::Queue name='#{name}' messages='#{@messages.inspect}'>"
         end
       end
       
