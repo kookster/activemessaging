@@ -35,7 +35,6 @@ module ActiveMessaging
         def send queue_name, message_body, message_headers={}
           open_queue queue_name
           queue = find_queue queue_name
-          puts "sending to #{queue}"
           queue.send Message.new(message_headers, nil, message_body, nil, queue)
         end
         
@@ -47,13 +46,9 @@ module ActiveMessaging
         end
         
         def receive queue_name, headers={}
-          puts "queues = #{@queues.inspect}"
-          puts "queue_name = #{queue_name}"
           subscribe queue_name, headers
           queue = find_queue queue_name
-          puts "queue = #{queue}"
           message = queue.receive
-          puts "message = #{message}"
           unsubscribe queue_name, headers
           message
         end
@@ -65,7 +60,7 @@ module ActiveMessaging
         #test helper methods
         def find_message queue_name, body
           all_messages.find do |m|
-            m.headers['destination'] == queue_name && m.body = body
+            m.headers['destination'] == queue_name && m.body.to_s == body.to_s
           end
         end
         

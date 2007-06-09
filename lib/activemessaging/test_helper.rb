@@ -138,7 +138,7 @@ module ActiveMessaging #:nodoc:
       assert_nil ActiveMessaging::Gateway.connection('default').find_subscription(queue), error_message
     end
     
-    def assert_has_messages queue_name
+    def assert_has_messages queue
       queue_name = ActiveMessaging::Gateway.find_queue(queue).destination
       error_message = <<-EOF
       No messages for #{queue_name}.
