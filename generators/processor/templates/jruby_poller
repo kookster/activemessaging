@@ -1,0 +1,117 @@
+#!/bin/sh
+
+JRUBY_CMD=`which jruby`
+RAILS_ROOT="$(dirname $0)/.."
+POLLER_RB="$RAILS_ROOT/vendor/plugins/activemessaging/poller.rb"
+OUT="$RAILS_ROOT/tmp/poller.output"
+PID_FILE="$RAILS_ROOT/tmp/poller0.pid"
+
+if [ -z "$JRUBY_CMD" ] ; then
+	echo "Could not find jruby on your path."
+	exit 1
+fi
+
+if [ ! -f $POLLER_RB ] ; then
+	echo "Could not find the poller file at: $POLLER_RB"
+	exit 1
+fi
+
+function start() {
+	if [[ -s $PID_FILE && -n "$(ps -A | grep "^[ \t]*$(< $PID_FILE)")" ]] ; then
+		PID=$(< $PID_FILE)
+		echo "Poller already running with pid $PID."
+		exit 1
+	fi
+	$JRUBY_CMD $POLLER_RB "$@" >> $OUT 2>&1 &
+	PID=$!
+	echo $PID > $PID_FILE
+	echo "Poller started with pid=$PID"
+}
+
+function stop() {
+	if [[ -z "$(ps -A | grep "^[ \t]*$(< $PID_FILE)")" ]] ; then
+		echo "Poller is not currently running."
+		exit 1
+	fi
+	if [ -z "$FORCE" ] ; then
+		echo "Sending TERM signal to poller."
+		kill -TERM $(< $PID_FILE)
+	else
+		echo "Sending KILL signal to poller."
+		kill -KILL $(< $PID_FILE)
+	fi
+	rm $PID_FILE
+}
+
+function restart() {
+	stop
+	start
+}
+
+function run() {
+	exec $JRUBY_CMD $POLLER_RB "$@"
+}
+
+function zap() {
+	echo "Resetting to stopped state."
+	[ -f $PID_FILE ] && rm $PID_FILE
+}
+
+function usage() {
+	cat <<EOF
+Usage: poller <command> <options> -- <application options>
+
+* where <command> is one of:
+  start         start an instance of the application
+  stop          stop all instances of the application
+  restart       stop all instances and restart them afterwards
+  run           start the application and stay on top
+  zap           set the application to a stopped state
+
+* and where <options> may contain several of the following:
+
+    -t, --ontop                      Stay on top (does not daemonize)
+    -f, --force                      Force operation
+EOF
+
+}
+
+CMD=$1
+shift
+
+for i in "1" "2" ; do
+	case "$1" in
+		"-f"|"--force")
+			FORCE="true"
+			shift
+		;;
+		"-t"|"--ontop")
+			ONTOP="true"
+			shift
+		;;
+	esac
+done
+
+[ "$1" == "--" ] && shift
+
+case "$CMD" in
+	"start")
+		start
+	;;
+	"stop")		
+		stop
+	;;
+	"run")
+		run
+	;;
+	"restart")
+		restart
+	;;
+	"zap")
+		zap
+	;;
+	"usage"|*)
+		usage 
+		exit 1
+	;;
+esac

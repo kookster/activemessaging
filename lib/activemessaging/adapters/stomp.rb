@@ -1,4 +1,4 @@
-require_gem 'stomp'
+gem 'stomp'
 require 'stomp'
 
 module ActiveMessaging

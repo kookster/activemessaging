@@ -10,6 +10,9 @@ class ProcessorGenerator < Rails::Generator::NamedBase
       m.file 'broker.yml', File.join('config', "broker.yml")
       m.file 'application.rb', File.join(path, "application.rb")
       m.file 'poller', File.join('script', "poller"), { :chmod => 0755 }
+      if defined?(JRUBY_VERSION)
+        m.file 'jruby_poller', File.join('script', "jruby_poller"), { :chmod => 0755 }
+      end
     end
   end
 end
