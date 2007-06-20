@@ -1,5 +1,5 @@
-#this will blow up in cruby, but thats ok because load errors are trapped
 
+if defined?(JRUBY_VERSION)
 #require 'java'
 include Java
 
@@ -228,4 +228,6 @@ module ActiveMessaging
 #       end
     end
   end
+end
+
 end
