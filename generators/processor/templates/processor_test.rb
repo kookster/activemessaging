@@ -10,6 +10,10 @@ class <%= class_name %>ProcessorTest < Test::Unit::TestCase
     @processor = <%= class_name %>Processor.new
   end
   
+  def teardown
+    @processor = nil
+  end  
+
   def test_<%= file_name %>_processor
     @processor.on_message('Your test message here!')
   end
