@@ -5,8 +5,8 @@ module ActiveMessaging
 
     def self.included(included_by)
       class << included_by
-        def register adapterName
-          Gateway.register_adapter adapterName, self
+        def register adapter_name
+          Gateway.register_adapter adapter_name, self
         end
       end
     end

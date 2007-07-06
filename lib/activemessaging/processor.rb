@@ -7,20 +7,29 @@ module ActiveMessaging
 
     def self.included(included_by)
       class << included_by
-        def publishes_to queueName
-          Gateway.find_queue queueName
+        def publishes_to destination_name
+          Gateway.find_destination destination_name
+        end
+
+        def receives_from destination_name
+          Gateway.find_destination destination_name
         end
       end
     end
 
-    def publish queue_name, message, headers={}
-      Gateway.publish(queue_name, message, self.class, headers)
+    def publish destination_name, message, headers={}, timeout=10
+      Gateway.publish(destination_name, message, self.class, headers, timeout)
+    end
+
+    def receive destination_name, headers={}, timeout=10
+      Gateway.receive(destination_name, self.class, headers, timeout)
     end
 
   end
 
   class Processor
     include MessageSender
+    # include Reloadable
     
     attr_reader :message
   
@@ -30,8 +39,8 @@ module ActiveMessaging
     end
     
     class<<self
-      def subscribes_to queueName, headers={}
-        ActiveMessaging::Gateway.subscribe_to queueName, self, headers
+      def subscribes_to destination_name, headers={}
+        ActiveMessaging::Gateway.subscribe_to destination_name, self, headers
       end
     end
     
@@ -41,7 +50,11 @@ module ActiveMessaging
       @message = message
       on_message(message.body)
     rescue
-      on_error($!)
+      begin
+        on_error($!)
+      rescue
+        logger.error "Processor:process! - error in on_error, will propagate no further: #{$!.message}"
+      end
     end
 
   end

@@ -115,6 +115,9 @@ module ActiveMessaging
           end
         end
 
+        def received message, headers={}
+        end
+
         private
 
         # Retrieve the first available message from the specicied queue

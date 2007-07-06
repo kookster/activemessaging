@@ -1,30 +1,64 @@
 #
-# simple yaml file for the env specific configuration of the connection configuration
-# listed here on generation are the defaults - amy of these can be removed safely, but by listing them it documents possible
-# configuration parameters for the broker connection
+# broker.yml
+#
+# Simple yaml file for the env specific configuration of the broker connections.
+# See the wiki for more information: http://code.google.com/p/activemessaging/wiki/Configuration
 #
 development:
+    ############################
+    # Stomp Adapter Properties #
+    ############################
     adapter: stomp
-    login: ""
-    passcode: ""
-    host: localhost
-    port: 61613
-    reliable: true
-    reconnectDelay: 5
+    # properties below are all defaults for this adapter
+    # login: ""
+    # passcode: ""
+    # host: localhost
+    # port: 61613
+    # reliable: true
+    # reconnectDelay: 5
+
+    ###################################
+    # Websphere MQ Adapter Properties #
+    ###################################
+    # adapter: wmq
+    # q_mgr_name: ""
+    # poll_interval: .1
+
+    #################################
+    # Amazon SQS Adapter Properties #
+    #################################
+    # adapter: asqs
+    # access_key_id: XXXXXXXXXXXXXXXXXXXX
+    # secret_access_key: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    ## properties below are all defaults for this adapter
+    # host: queue.amazonaws.com
+    # port: 80
+    # reliable: true
+    # reconnectDelay: 5
+    # aws_version: 2006-04-01 
+    # content_type: text/plain
+    # poll_interval: 1
+    # cache_queue_list: true
+
+    ########################################
+    # ReliableMessaging Adapter Properties #
+    ########################################
+    # adapter: reliable_msg
+    ## properties below are all defaults for this adapter
+    # poll_interval: 1
+    # reliable: true    
 
 test:
     adapter: test
-    login: ""
-    passcode: ""
-    host: localhost
-    port: 61613
     reliable: false
 
 production:
     adapter: stomp
-    login: ""
-    passcode: ""
-    host: localhost
-    port: 61613
     reliable: true
-    reconnectDelay: 5
+    # properties below are all defaults for this adapter
+    # login: ""
+    # passcode: ""
+    # host: localhost
+    # port: 61613
+    # reliable: true
+    # reconnectDelay: 5

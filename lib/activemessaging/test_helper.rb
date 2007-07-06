@@ -7,11 +7,15 @@ module ActiveMessaging #:nodoc:
   class Gateway
   
     def self.reset
+      unsubscribe
+      disconnect
       @@filters = []
       @@subscriptions = {}
-      @@named_queues = {}
+      @@named_destinations = {}
       @@trace_on = nil
-      connection('default').disconnect
+      @@processor_groups = {}
+      @@current_processor_group = nil
+      @@connections = {}
     end
     
   end
@@ -84,32 +88,32 @@ module ActiveMessaging #:nodoc:
       ActiveMessaging::Gateway.reset
     end
 
-    def mock_publish queue, body, publisher=nil, headers={}
-      ActiveMessaging::Gateway.publish queue, body, publisher, headers
+    def mock_publish destination, body, publisher=nil, headers={}
+      ActiveMessaging::Gateway.publish destination, body, publisher, headers
     end
 
-    def assert_message queue, body
-      queue = ActiveMessaging::Gateway.find_queue(queue).destination
+    def assert_message destination, body
+      destination = ActiveMessaging::Gateway.find_destination(destination).value
       error_message = <<-EOF
-      Message for '#{queue}' with '#{body}' is not present.
+      Message for '#{destination}' with '#{body}' is not present.
       Messages:
       #{ActiveMessaging::Gateway.connection('default').all_messages.inspect}
       EOF
-      assert ActiveMessaging::Gateway.connection.find_message(queue, body), error_message
+      assert ActiveMessaging::Gateway.connection.find_message(destination, body), error_message
     end
       
-    def assert_no_message_with queue, body
-      queue = ActiveMessaging::Gateway.find_queue(queue).destination
+    def assert_no_message_with destination, body
+      destination = ActiveMessaging::Gateway.find_destination(destination).value
       error_message = <<-EOF
-      Message for '#{queue}' with '#{body}' is present.
+      Message for '#{destination}' with '#{body}' is present.
       Messages:
       #{ActiveMessaging::Gateway.connection('default').all_messages.inspect}
       EOF
-      assert_nil ActiveMessaging::Gateway.connection('default').find_message(queue, body), error_message
+      assert_nil ActiveMessaging::Gateway.connection('default').find_message(destination, body), error_message
     end
 
-    def assert_no_messages queue
-      queue = ActiveMessaging::Gateway.find_queue(queue).destination
+    def assert_no_messages destination
+      destination = ActiveMessaging::Gateway.find_destination(destination).value
       error_message = <<-EOF
       Expected no messages.
       Messages:
@@ -118,35 +122,35 @@ module ActiveMessaging #:nodoc:
       assert_equal [], ActiveMessaging::Gateway.connection('default').all_messages, error_message
     end
 
-    def assert_subscribed queue
-      queue = ActiveMessaging::Gateway.find_queue(queue).destination
+    def assert_subscribed destination
+      destination = ActiveMessaging::Gateway.find_destination(destination).value
       error_message = <<-EOF
-      Not subscribed to #{queue}.
+      Not subscribed to #{destination}.
       Subscriptions:
       #{ActiveMessaging::Gateway.connection('default').subscriptions.inspect}
       EOF
-      assert ActiveMessaging::Gateway.connection('default').find_subscription(queue), error_message
+      assert ActiveMessaging::Gateway.connection('default').find_subscription(destination), error_message
     end
 
-    def assert_not_subscribed queue
-      queue = ActiveMessaging::Gateway.find_queue(queue).destination
+    def assert_not_subscribed destination
+      destination = ActiveMessaging::Gateway.find_destination(destination).value
       error_message = <<-EOF
-      Subscribed to #{queue}.
+      Subscribed to #{destination}.
       Subscriptions:
       #{ActiveMessaging::Gateway.connection('default').subscriptions.inspect}
       EOF
-      assert_nil ActiveMessaging::Gateway.connection('default').find_subscription(queue), error_message
+      assert_nil ActiveMessaging::Gateway.connection('default').find_subscription(destination), error_message
     end
     
-    def assert_has_messages queue
-      queue_name = ActiveMessaging::Gateway.find_queue(queue).destination
+    def assert_has_messages destination
+      destination_name = ActiveMessaging::Gateway.find_destination(destination).value
       error_message = <<-EOF
-      No messages for #{queue_name}.
+      No messages for #{destination_name}.
       All messages:
       #{ActiveMessaging::Gateway.connection('default').all_messages.inspect}
       EOF
-      queue = ActiveMessaging::Gateway.connection('default').find_queue queue_name
-      assert !queue.nil? && !queue.messages.empty?, error_message
+      destination = ActiveMessaging::Gateway.connection('default').find_destination destination_name
+      assert !destination.nil? && !destination.messages.empty?, error_message
     end
   end
 end

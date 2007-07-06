@@ -100,7 +100,7 @@ module ActiveMessaging
           end
         end
         
-        def received message
+        def received message, headers={}
           #do nothing
         end
         

@@ -12,7 +12,6 @@ class FilterTest < Test::Unit::TestCase
     end
     
     def process(message, details={})
-
       @was_called = true
       @details=details
       yield
@@ -47,7 +46,6 @@ class FilterTest < Test::Unit::TestCase
     end
     
     def on_message(message)
-      puts "TEST PROCESSOR EXECUTING"
       @@was_called = true
     end
   end
@@ -55,7 +53,6 @@ class FilterTest < Test::Unit::TestCase
   def setup
     ActiveMessaging::Gateway.define do |d|
       d.queue :testqueue, 'testqueue'
-      
       d.filter MockFilter.new(:bidirectional)
       d.filter MockFilter.new(:incoming), :direction => :in
       d.filter MockFilter.new(:outgoing), :direction => :out
@@ -95,14 +92,14 @@ class FilterTest < Test::Unit::TestCase
     sender.publish :testqueue, "Hi there!"
 
     @outgoing.assert_was_called
-    @outgoing.assert_routing({:queue=>ActiveMessaging::Gateway.find_queue(:testqueue), :publisher=>FilterTest::TestProcessor, :direction=>:outgoing})
+    @outgoing.assert_routing({:destination=>ActiveMessaging::Gateway.find_queue(:testqueue), :publisher=>FilterTest::TestProcessor, :direction=>:outgoing})
   end
 
   def test_sets_routing_details_on_receive
     ActiveMessaging::Gateway.dispatch ActiveMessaging::TestMessage.new('testqueue')
 
     @incoming.assert_was_called
-    @incoming.assert_routing({:queue=>ActiveMessaging::Gateway.find_queue(:testqueue), :receiver=>FilterTest::TestProcessor, :direction=>:incoming})
+    @incoming.assert_routing({:destination=>ActiveMessaging::Gateway.find_queue(:testqueue), :receiver=>FilterTest::TestProcessor, :direction=>:incoming})
   end
 
   

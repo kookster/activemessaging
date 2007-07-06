@@ -21,39 +21,38 @@ module ActiveMessaging
         def disconnect
         end
 
-        # queue_name string, headers hash
-        # subscribe to listen on a queue
-        def subscribe queue_name, message_headers={}
+        # destination_name string, headers hash
+        # subscribe to listen on a destination
+        def subscribe destination_name, message_headers={}
         end
 
-        # queue_name string, headers hash
-        # unsubscribe to listen on a queue
-        def unsubscribe queue_name, message_headers={}
+        # destination_name string, headers hash
+        # unsubscribe to listen on a destination
+        def unsubscribe destination_name, message_headers={}
         end
 
-        # queue_name string, body string, headers hash
-        # send a single message to a queue
-        def send queue_name, message_body, message_headers
+        # destination_name string, body string, headers hash
+        # send a single message to a destination
+        def send destination_name, message_body, message_headers={}
         end
 
-        # receive a single message from any of the subscribed queues
-        # check each queue once, then sleep for poll_interval
+        # receive a single message from any of the subscribed destinations
+        # check each destination once, then sleep for poll_interval
         def receive
         end
 
         # called after a message is successfully received and processed
-        # this is new, needed for Amazon SQS
-        def received message
+        def received message, headers={}
         end
         
       end
 
-      # I recommend having a queue object to represent each subscribed queue 
-      class Queue
+      # I recommend having a destination object to represent each subscribed destination 
+      class Destination
         attr_accessor :name
 
         def to_s
-          "<Base::Queue name='#{name}'>"
+          "<Base::Destination name='#{name}'>"
         end
       end
 
@@ -63,9 +62,9 @@ module ActiveMessaging
       class Message
         attr_accessor :headers, :body, :command
         
-        def initialize headers, id, body, response, queue, command='MESSAGE'
+        def initialize headers, id, body, response, destination, command='MESSAGE'
           @headers, @body, @command =  headers, body, command
-          headers['destination'] = queue.name
+          headers['destination'] = destination.name
         end
       
         def to_s

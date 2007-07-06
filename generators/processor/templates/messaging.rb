@@ -1,11 +1,12 @@
 #
-# Add your queue definitions here
+# Add your destination definitions here
+# can also be used to configure filters, and processor groups
 #
 ActiveMessaging::Gateway.define do |s|
-  #s.connection_configuration = {:reliable => true}
-  #s.queue :orders, '/queue/Orders'
+  #s.destination :orders, '/queue/Orders'
+  #s.filter :incoming, MyFilter.new
   #s.processor_group :group1, :order_processor
   
-  s.queue :<%= singular_name %>, '/queue/<%= class_name %>'
+  s.destination :<%= singular_name %>, '/queue/<%= class_name %>'
   
 end

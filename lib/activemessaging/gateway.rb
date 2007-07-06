@@ -2,34 +2,11 @@ require 'yaml'
 
 module ActiveMessaging
 
-  class StopProcessingException < Interrupt #:nodoc:
-  end
-
-  def ActiveMessaging.logger
-    @@logger = ActiveRecord::Base.logger unless defined?(@@logger)
-    @@logger = Logger.new(STDOUT) unless defined?(@logger)
-    @@logger
-  end
-
-  def ActiveMessaging.start
-    if ActiveMessaging::Gateway.subscriptions.empty?
-      puts "No subscriptions."
-      puts "If you have no processor classes in app/processors, add them using the command:"
-      puts "  script/generate processor DoSomething"
-      puts "If you have processor classes, make sure they include in the class a call to 'subscribes_to':"
-      puts "  class DoSomethingProcessor < ActiveMessaging::Processor"
-      puts "    subscribes_to :do_something"
-      exit
-    end
-
-    Gateway.start
-  end
-
   class Gateway
-    cattr_accessor :adapters, :subscriptions, :named_queues, :filters, :processor_groups
+    cattr_accessor :adapters, :subscriptions, :named_destinations, :filters, :processor_groups, :connections
     @@adapters = {}
     @@subscriptions = {}
-    @@named_queues = {}
+    @@named_destinations = {}
     @@filters = []
     @@processor_groups = {}
 
@@ -54,7 +31,9 @@ module ActiveMessaging
                 Thread.current[:message] = nil
                 Thread.current[:message] = conn.receive
               rescue StopProcessingException
-                puts "Processing Stopped - receive interrupted, will process last message if already received"
+                puts "ActiveMessaging: thread[#{name}]: Processing Stopped - receive interrupted, will process last message if already received"
+              rescue Object=>exception
+                puts "ActiveMessaging: thread[#{name}]: Exception from connection.receive: #{exception.message}\n" + exception.backtrace.join("\n\t")
               ensure
                 dispatch Thread.current[:message] if Thread.current[:message]
                 Thread.current[:message] = nil
@@ -74,9 +53,9 @@ module ActiveMessaging
         puts "All connection threads have died..."
       rescue Interrupt
         puts "\n<<Interrupt received>>\n"  
-      rescue
-        st = $!.backtrace.join("\n\t")
-        puts "#{$!.class.name}: #{$!.message}\n\t#{st}"
+      rescue Object=>exception
+        st = exception.backtrace.join("\n\t")
+        puts "#{exception.class.name}: #{exception.message}\n\t#{st}"
         raise $!
       ensure
         puts "Cleaning up..."
@@ -147,10 +126,11 @@ module ActiveMessaging
 
       def disconnect
         @@connections.each { |key,connection| connection.disconnect }
+        @@connections = {}
       end
 
       def dispatched subscription, message
-        connection(subscription.queue.broker_name).received message
+        connection(subscription.destination.broker_name).received message, subscription.subscribe_headers
       end
       
       def execute_filter_chain(direction, message, details={})
@@ -202,7 +182,7 @@ module ActiveMessaging
             if subscription.matches?(message) then
               routing = {
                 :receiver=>subscription.processor_class, 
-                :queue=>subscription.queue,
+                :destination=>subscription.destination,
                 :direction => :incoming
               }
               execute_filter_chain(:in, message, routing) do |m| 
@@ -223,42 +203,77 @@ module ActiveMessaging
         #run the rest of messaging.rb
         yield self
       end
-      
-      def queue queue_name, queue, publish_headers={}, broker='default'
-        named_queues[queue_name] = Queue.new queue_name, queue, publish_headers, broker
+
+      def destination destination_name, destination, publish_headers={}, broker='default'
+        # raise "You already defined #{destination_name} to #{named_destinations[destination_name].value}" if named_destinations.has_key?(destination_name)
+        named_destinations[destination_name] = Destination.new destination_name, destination, publish_headers, broker
       end
       
-      def find_queue queue_name
-        real_queue = named_queues[queue_name]
-        raise "You have not yet defined a queue named #{queue_name}. Queues currently defined are [#{named_queues.keys.join(',')}]" if real_queue.nil?
-        real_queue
+      alias queue destination
+      
+      def find_destination destination_name
+        real_destination = named_destinations[destination_name]
+        raise "You have not yet defined a destination named #{destination_name}. Destinations currently defined are [#{named_destinations.keys.join(',')}]" if real_destination.nil?
+        real_destination
       end
 
-      def trace_on queue
-        @@trace_on = queue
+      alias find_queue find_destination
+
+      def trace_on destination
+        @@trace_on = destination
       end
 
-      def subscribe_to queue_name, processor, headers={}
+      def subscribe_to destination_name, processor, headers={}
         proc_name = processor.name.underscore
         proc_sym = processor.name.underscore.to_sym
         if (!current_processor_group || processor_groups[current_processor_group].include?(proc_sym))
-          @@subscriptions["#{proc_name}:#{queue_name}"]= Subscription.new(find_queue(queue_name), processor, headers)
+          @@subscriptions["#{proc_name}:#{destination_name}"]= Subscription.new(find_destination(destination_name), processor, headers)
         end
       end
 
-      def publish queue_name, body, publisher=nil, headers = {}
-        real_queue = find_queue(queue_name)
+      def publish destination_name, body, publisher=nil, headers={}, timeout=10
+        raise "You cannot have a nil or empty destination name." if destination_name.nil?
+        raise "You cannot have a nil or empty message body." if (body.nil? || body.empty?)
+        
+        real_destination = find_destination(destination_name)
         details = {
           :publisher => publisher, 
-          :queue => real_queue,
+          :destination => real_destination,
           :direction => :outgoing
         }
-        message = OpenStruct.new(:body => body, :headers => headers.reverse_merge(real_queue.publish_headers))
-        execute_filter_chain(:out, message, details) do |message|
-          connection(real_queue.broker_name).send real_queue.destination, message.body, message.headers
+        message = OpenStruct.new(:body => body, :headers => headers.reverse_merge(real_destination.publish_headers))
+        begin
+          Timeout.timeout timeout do
+            execute_filter_chain(:out, message, details) do |message|
+              connection(real_destination.broker_name).send real_destination.value, message.body, message.headers
+            end
+          end
+        rescue Timeout::Error=>toe
+          ActiveMessaging.logger.error("Timed out trying to send the message #{message} to destination #{destination_name} via broker #{real_destination.broker_name}")
+          raise toe
         end
       end
-
+      
+      def receive destination_name, receiver=nil, subscribe_headers={}, timeout=10
+        raise "You cannot have a nil or empty destination name." if destination_name.nil?
+        conn = nil
+        dest = find_destination destination_name
+        config = load_connection_configuration(dest.broker_name)
+        subscribe_headers['id'] = receiver.name.underscore unless (receiver.nil? or subscribe_headers.key? 'id') 
+        Timeout.timeout timeout do
+          conn = Gateway.adapters[config[:adapter]].new(config)
+          conn.subscribe(dest.value, subscribe_headers)
+          message = conn.receive
+          conn.received message, subscribe_headers
+          return message
+        end
+      rescue Timeout::Error=>toe
+        ActiveMessaging.logger.error("Timed out trying to receive a message on destination #{destination_name}")
+        raise toe
+      ensure
+        conn.disconnect unless conn.nil?
+      end
+      
       def processor_group group_name, *processors
         if processor_groups.has_key? group_name
           processor_groups[group_name] =  processor_groups[group_name] + processors
@@ -290,11 +305,11 @@ module ActiveMessaging
       end
       
       def load_connection_configuration(label='default')
-        broker_config = YAML.load_file(File.join(RAILS_ROOT, 'config', 'broker.yml'))
+        @broker_yml = YAML.load_file(File.join(RAILS_ROOT, 'config', 'broker.yml')) if @broker_yml.nil?
         if label == 'default'
-          config = broker_config[RAILS_ENV].symbolize_keys
+          config = @broker_yml[RAILS_ENV].symbolize_keys
         else
-          config = broker_config[RAILS_ENV][label].symbolize_keys
+          config = @broker_yml[RAILS_ENV][label].symbolize_keys
         end
         config[:adapter] = config[:adapter].to_sym if config[:adapter]
         config[:adapter] ||= :stomp
@@ -304,39 +319,44 @@ module ActiveMessaging
     end
 
   end
-  
+
   class Subscription
-    attr_accessor :queue, :processor_class, :subscribe_headers
+    attr_accessor :destination, :processor_class, :subscribe_headers
         
-    def initialize(queue, processor_class, subscribe_headers = {})
-      @queue, @processor_class, @subscribe_headers = queue, processor_class, subscribe_headers
+    def initialize(destination, processor_class, subscribe_headers = {})
+      @destination, @processor_class, @subscribe_headers = destination, processor_class, subscribe_headers
       subscribe_headers['id'] = processor_class.name.underscore unless subscribe_headers.key? 'id'
     end
     
     def matches?(message)
-      message.headers['destination'].to_s == @queue.destination.to_s
+      message.headers['destination'].to_s == @destination.value.to_s
     end
     
     def subscribe
-      puts "=> Subscribing to #{queue.destination} (processed by #{processor_class})"
-      Gateway.connection(queue.broker_name).subscribe(queue.destination, subscribe_headers) 
+      puts "=> Subscribing to #{destination.value} (processed by #{processor_class})"
+      Gateway.connection(@destination.broker_name).subscribe(@destination.value, subscribe_headers) 
     end
 
     def unsubscribe
-      puts "=> Unsubscribing from #{queue.destination} (processed by #{processor_class})"
-      Gateway.connection(queue.broker_name).unsubscribe(queue.destination, subscribe_headers)
+      puts "=> Unsubscribing from #{destination.value} (processed by #{processor_class})"
+      Gateway.connection(destination.broker_name).unsubscribe(destination.value, subscribe_headers)
     end
   end
 
-  class Queue
+  class Destination
     DEFAULT_PUBLISH_HEADERS = { :persistent=>true }
 
-    attr_accessor :name, :destination, :publish_headers, :broker_name
+    attr_accessor :name, :value, :publish_headers, :broker_name
 
-    def initialize(name, destination, publish_headers, broker_name)
-      @name, @destination, @publish_headers, @broker_name = name, destination, publish_headers, broker_name
+    def initialize(name, value, publish_headers, broker_name)
+      @name, @value, @publish_headers, @broker_name = name, value, publish_headers, broker_name
       @publish_headers.reverse_merge! DEFAULT_PUBLISH_HEADERS
     end
+    
+    def to_s
+      "#{broker_name}: #{name} => '#{value}'"
+    end
+
   end
 
 end #module

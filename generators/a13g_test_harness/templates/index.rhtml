@@ -1,0 +1,17 @@
+<h1>ActiveMessaging Test Harness</h1>
+
+<% form_tag :action => 'index' do |f| %>
+<p>
+	<label for="destination">Destination:</label><br/>
+	(broker: name => 'destination')<br/>
+	<select name="destination">
+		<option value=""></option>
+		<%= options_from_collection_for_select @destinations, 'name', 'to_s', @destination %>
+	</select>
+</p>
+<p>
+	<label for="message">Message:</label><br/>
+	<%= text_area_tag :message, @message, :size=>'50x10' %> 
+</p>
+<%= submit_tag "submit" %>
+<% end -%>

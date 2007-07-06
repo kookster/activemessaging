@@ -28,8 +28,8 @@ module ActiveMessaging
             @port = cfg[:port]                          || 80
             @poll_interval = cfg[:poll_interval]        || 1
             @cache_queue_list = cfg[:cache_queue_list]  || true
-            @reliable = cfg[:reliable]                  ||= true
-            @reconnectDelay = cfg[:reconnectDelay]      ||= 5
+            @reliable = cfg[:reliable]                  || true
+            @reconnectDelay = cfg[:reconnectDelay]      || 5
             
             #initialize the subscriptions and queues
             @subscriptions = {}
@@ -79,12 +79,12 @@ module ActiveMessaging
             queue = queues[queue_name]
             unless queue.nil?
               messages = retrieve_messsages queue, 1
-              return messages[0] unless (messages.nil? or messages.empty?)
+              return messages[0] unless (messages.nil? or messages.empty? or messages[0].nil?)
             end
           end
         end
 
-        def received message
+        def received message, headers={}
           delete_message message
         end
         
@@ -92,16 +92,15 @@ module ActiveMessaging
         
         #belows are the methods from the REST API
         def create_queue queue_name
-          validate_queue_name queue_name
-          validate_queue queue_name, false
+          validate_new_queue queue_name
           response = transmit 'POST', "/?QueueName=#{queue_name}"
-          add_queue response.get_text("//QueueUrl")
+          add_queue response.get_text("//QueueUrl") unless response.nil?
         end
 
         def list_queues queue_name_prefix=nil
           validate_queue_name queue_name_prefix unless queue_name_prefix.nil?
           response = transmit 'GET', queue_name_prefix.nil? ? '/' : "/?QueueNamePrefix=#{queue_name_prefix}"
-          response.nodes("//QueueUrl").collect{ |n| add_queue(n.text) }
+          response.nil? ? [] : response.nodes("//QueueUrl").collect{ |n| add_queue(n.text) }
         end
         
         def delete_queue queue
@@ -127,7 +126,7 @@ module ActiveMessaging
           validate_timeout timeout if timeout
           timeout_path = timeout ? "VisibilityTimeout=#{timeout}&" : ''
           response = transmit 'GET', "#{queue.queue_url}/front?#{timeout_path}NumberOfMessages=#{num_messages}", queue.domain
-          response.nodes("//Message").collect{ |n| Message.from_element n, response, queue }
+          response.nodes("//Message").collect{ |n| Message.from_element n, response, queue } unless response.nil?
         end
         
         def get_visibility_timeout queue
@@ -175,15 +174,15 @@ module ActiveMessaging
           request_headers = create_headers(command, url, headers, body)
           request = http_request_factory(command, url, request_headers, body)
           tryit = true
-          begin
-            while tryit
+          while tryit
+            begin
               response = SQSResponse.new(Net::HTTP.start(h, p){ |http| http.request(request) })
-              tryit = false
+              tryit = false unless response.nil?
+            rescue
+              raise $! unless reliable
+              puts "transmit failed, will retry in #{@reconnectDelay} seconds"
+              sleep @reconnectDelay
             end
-          rescue
-            raise $! unless reliable
-            puts "transmit failed, will retry in #{@reconnectDelay} seconds"
-            sleep @reconnectDelay
           end
           # p response
           # puts "body: #{response.http_response.body}"
@@ -231,7 +230,7 @@ module ActiveMessaging
         end
 
         def check_errors(response)
-          raise response.errors if response.errors?
+          raise response.errors if (response && response.errors?)
           response
         end
         
@@ -240,12 +239,13 @@ module ActiveMessaging
           raise "Queue name, #{qn}, must be alphanumeric only." if (qn =~ /\W/ )
         end
 
-        def validate_queue qn, exists=true
-          if exists
-            raise "Never heard of queue, can't use it: #{qn.name}" unless queues.has_key? qn.name
-          else
-            raise "Queue already exists: #{qn}" if queues.has_key? qn.name
-          end
+        def validate_new_queue qn
+          validate_queue_name qn
+          raise "Queue already exists: #{qn}" if queues.has_key? qn
+        end
+
+        def validate_queue q
+            raise "Never heard of queue, can't use it: #{q.name}" unless queues.has_key? q.name
         end
 
         def validate_message m
@@ -282,7 +282,7 @@ module ActiveMessaging
 
         def errors
           msg = ""
-          if  http_response.kind_of?(Net::HTTPSuccess)
+          if http_response.kind_of?(Net::HTTPSuccess)
             msg = "Errors: "
             each_node('/Response/Errors/Error') { |n|
               c = n.elements['Code'].text

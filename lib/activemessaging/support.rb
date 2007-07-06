@@ -8,5 +8,18 @@ require 'dispatcher' unless defined?(::Dispatcher)
   def self.reset_application_after_dispatch
     reset_after_dispatch
   end
+  
+  # unless ::Dispatcher.respond_to?(:to_prepare)
+  #   
+  #   def prepare_application
+  #     ActiveMessaging.reload_activemessaging
+  #     ActionController::Routing::Routes.reload if Dependencies.load?
+  #     prepare_breakpoint
+  #     require_dependency('application.rb') unless Object.const_defined?(:ApplicationController)
+  #     ActiveRecord::Base.verify_active_connections!
+  #   end
+  # 
+  # end
+  
 
 end
