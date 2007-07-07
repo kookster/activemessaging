@@ -26,7 +26,7 @@ module ActiveMessaging
         adapter_name = File.basename(a, ".rb")
         require 'activemessaging/adapters/' + adapter_name
       rescue RuntimeError, LoadError => e
-        logger.debug "** ActiveMessaging: adapter #{adapter_name} not loaded: #{ e.message }"
+        logger.debug "ActiveMessaging: adapter #{adapter_name} not loaded: #{ e.message }"
       end
     }
   end
