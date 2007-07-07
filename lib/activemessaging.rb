@@ -32,7 +32,7 @@ module ActiveMessaging
   end
 
   def self.load_config
-    path = "#{RAILS_ROOT}/config/messaging.rb"
+    path = File.expand_path("#{RAILS_ROOT}/config/messaging.rb")
     begin
       load path
     rescue MissingSourceFile
