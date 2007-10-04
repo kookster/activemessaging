@@ -1,5 +1,5 @@
 Description:
-    Generates a stub ActiveMassaging Processor and associated test.
+    Generates a stub ActiveMessaging Processor and associated test.
 
 Examples:
     ./script/generate processor HelloWorld
