@@ -1,5 +1,5 @@
 require 'dispatcher' unless defined?(::Dispatcher)
-ActionController::Dispatcher.class_eval do
+::Dispatcher.class_eval do
 
   def self.prepare_application_for_dispatch
     if (self.singleton_methods.include? "prepare_application")
