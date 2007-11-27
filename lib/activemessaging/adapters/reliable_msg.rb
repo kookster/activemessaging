@@ -73,11 +73,11 @@ module ActiveMessaging
         def receive
           raise "No subscriptions to receive messages from." if (subscriptions.nil? || subscriptions.empty?)
           start = @current_subscription
-          message = nil
           while true
-            current_subscription = ((@current_subscription < subscriptions.length-1) ? @current_subscription + 1 : 0)
+            @current_subscription = ((@current_subscription < @subscriptions.length-1) ? @current_subscription + 1 : 0)
+            # puts "sleep #{@poll_interval}..." if (@current_subscription == start)
             sleep poll_interval if (@current_subscription == start)
-            destination_name = subscriptions.keys.sort[@current_subscription]
+            destination_name = @subscriptions.keys.sort[@current_subscription]
             destination = destinations[destination_name]
             unless destination.nil?
               begin
@@ -87,8 +87,7 @@ module ActiveMessaging
                 puts "receive failed, will retry in #{@poll_interval} seconds"
                 sleep @poll_interval
               end
-              message = Message.new reliable_msg.id, reliable_msg.object, reliable_msg.headers, destination_name unless reliable_msg.nil?
-              return message
+              return Message.new reliable_msg.id, reliable_msg.object, reliable_msg.headers, destination_name unless reliable_msg.nil?
             end
           end
         end

@@ -13,9 +13,10 @@ class ReliableMsgTest < Test::Unit::TestCase
   def setup
     @qm = ReliableMsg::QueueManager.new
     @qm.start
-    @connection = ActiveMessaging::Adapters::ReliableMsg::Connection.new(:reliable=>false)
-    @d = "/queue/reliable.msg.test.#{name()}."
+    @connection = ActiveMessaging::Adapters::ReliableMsg::Connection.new(:reliable=>false, :poll_interval=>2)
+    @d = "/queue/reliable.msg.test}."
     @message = "mary had a little lamb"
+    @message2 = "whose fleece was white as snow"
   end
 
   def teardown
@@ -40,6 +41,22 @@ class ReliableMsgTest < Test::Unit::TestCase
     @connection.send "#{@d}test_send_and_receive", @message 
     message = @connection.receive
     assert_equal @message, message.body
+  end
+
+
+  def test_send_and_receive_multiple_subscriptions
+    @connection.subscribe "#{@d}test_send_and_receive1"
+    @connection.subscribe "#{@d}test_send_and_receive2"
+    @connection.subscribe "#{@d}test_send_and_receive3"
+
+    @connection.send "#{@d}test_send_and_receive2", "message2" 
+    message = @connection.receive
+    assert_equal "message2", message.body
+
+    @connection.send "#{@d}test_send_and_receive3", "message3"
+    message = @connection.receive
+    assert_equal "message3", message.body
+
   end
   
 end
