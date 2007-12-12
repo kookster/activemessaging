@@ -27,9 +27,10 @@ module ActiveMessaging
             @host = cfg[:host]                          || 'queue.amazonaws.com'
             @port = cfg[:port]                          || 80
             @poll_interval = cfg[:poll_interval]        || 1
-            @cache_queue_list = cfg[:cache_queue_list]  || true
-            @reliable = cfg[:reliable]                  || true
             @reconnectDelay = cfg[:reconnectDelay]      || 5
+
+            @cache_queue_list = cfg[:cache_queue_list].nil? ? true : cfg[:cache_queue_list]
+            @reliable =         cfg[:reliable].nil?         ? true : cfg[:reliable]
             
             #initialize the subscriptions and queues
             @subscriptions = {}
@@ -62,7 +63,7 @@ module ActiveMessaging
 
         # queue_name string, body string, headers hash
         # send a single message to a queue
-        def send queue_name, message_body, message_headers
+        def send queue_name, message_body, message_headers={}
           queue = get_or_create_queue queue_name
           send_messsage queue, message_body
         end
@@ -176,19 +177,21 @@ module ActiveMessaging
           tryit = true
           while tryit
             begin
-              response = SQSResponse.new(Net::HTTP.start(h, p){ |http| http.request(request) })
+              response = SQSResponse.new(http_request(h,p,request))
               tryit = false unless response.nil?
-            rescue
+            rescue StandardError, TimeoutError
               raise $! unless reliable
               puts "transmit failed, will retry in #{@reconnectDelay} seconds"
               sleep @reconnectDelay
             end
           end
-          # p response
-          # puts "body: #{response.http_response.body}"
           check_errors(response)
         end
-        
+
+        def http_request h, p, r
+          return Net::HTTP.start(h, p){ |http| http.request(r) }
+        end
+
         def create_headers(cmd, url, headers, body)
           # set then merge the headers
           hdrs = { 'AWS-Version'=>@aws_version, 
@@ -235,8 +238,8 @@ module ActiveMessaging
         end
         
         def validate_queue_name qn
-          raise "Queue name, #{qn}, must be between #{QUEUE_NAME.min} and #{QUEUE_NAME.max} characters." unless QUEUE_NAME.include?(qn.length)
-          raise "Queue name, #{qn}, must be alphanumeric only." if (qn =~ /\W/ )
+          raise "Queue name, '#{qn}', must be between #{QUEUE_NAME.min} and #{QUEUE_NAME.max} characters." unless QUEUE_NAME.include?(qn.length)
+          raise "Queue name, '#{qn}', must be alphanumeric only." if (qn =~ /[^\w\-\_]/ )
         end
 
         def validate_new_queue qn
