@@ -8,22 +8,24 @@ module ActiveMessaging
     @@subscriptions = {}
     @@named_destinations = {}
     @@filters = []
-    @@processor_groups = {}
-
-    @@trace_on = nil
-    @@current_processor_group = nil
     @@connections = {}
+    @@processor_groups = {}
+    @@current_processor_group = nil
+
+    # these are used to manage the running connection threads
     @@running = true
     @@connection_threads = {}
     @@guard = Mutex.new
  
     class <<self
 
+      # Starts up an message listener to start polling for messages on each configured connection, and dispatching processing
       def start
-        #subscribe - creating connections along the way
+
+        # subscribe - creating connections along the way
         subscribe
 
-        #for each conection, start a thread
+        # for each conection, start a thread
         @@connections.each do |name, conn|
           @@connection_threads[name] = Thread.start do
             while @@running
@@ -31,9 +33,9 @@ module ActiveMessaging
                 Thread.current[:message] = nil
                 Thread.current[:message] = conn.receive
               rescue StopProcessingException
-                puts "ActiveMessaging: thread[#{name}]: Processing Stopped - receive interrupted, will process last message if already received"
+                ActiveMessaging.logger.error "ActiveMessaging: thread[#{name}]: Processing Stopped - receive interrupted, will process last message if already received"
               rescue Object=>exception
-                puts "ActiveMessaging: thread[#{name}]: Exception from connection.receive: #{exception.message}\n" + exception.backtrace.join("\n\t")
+                ActiveMessaging.logger.error "ActiveMessaging: thread[#{name}]: Exception from connection.receive: #{exception.message}\n" + exception.backtrace.join("\n\t")
               ensure
                 dispatch Thread.current[:message] if Thread.current[:message]
                 Thread.current[:message] = nil
@@ -50,17 +52,16 @@ module ActiveMessaging
           @@running = living
           sleep 1
         end
-        puts "All connection threads have died..."
+        ActiveMessaging.logger.error "All connection threads have died..."
       rescue Interrupt
-        puts "\n<<Interrupt received>>\n"  
+        ActiveMessaging.logger.error "\n<<Interrupt received>>\n"  
       rescue Object=>exception
-        st = exception.backtrace.join("\n\t")
-        puts "#{exception.class.name}: #{exception.message}\n\t#{st}"
-        raise $!
+        ActiveMessaging.logger.error "#{exception.class.name}: #{exception.message}\n\t#{exception.backtrace.join("\n\t")}"
+        raise exception
       ensure
-        puts "Cleaning up..."
+        ActiveMessaging.logger.error "Cleaning up..."
         stop
-        puts "=> END"
+        ActiveMessaging.logger.error "=> END"
       end
       
       def stop
@@ -77,9 +78,9 @@ module ActiveMessaging
               dispatching = true
               # if thread got killed, but dispatch not done, try it again
               if thread.alive?
-                puts "Waiting on thread #{name} to finish processing last message..."
+                ActiveMessaging.logger.error "Waiting on thread #{name} to finish processing last message..."
               else
-                puts "Starting thread #{name} to finish processing last message..."
+                ActiveMessaging.logger.error "Starting thread #{name} to finish processing last message..."
                 msg = thread[:message]
                 thread.exit
                 thread = Thread.start do
@@ -129,31 +130,62 @@ module ActiveMessaging
         @@connections = {}
       end
 
-      def dispatched subscription, message
-        connection(subscription.destination.broker_name).received message, subscription.subscribe_headers
-      end
-      
       def execute_filter_chain(direction, message, details={})
         filters.each do |filter, options|
-            if direction.to_sym == options[:direction] || options[:direction] == :bidirectional
-              exit_flag = true
-              filter.process(message, details) do 
-                exit_flag = false
-              end
-              return if exit_flag
+          if apply_filter?(direction, details, options)
+            begin
+              filter_obj = create_filter(filter, options)
+              filter_obj.process(message, details)
+            rescue ActiveMessaging::StopFilterException => sfe
+              ActiveMessaging.logger.error "Filter: #{filter_obj.inspect} threw StopProcessingException: #{sfe.message}"
+              return
             end
+          end
         end
         yield(message)
       end
+      
+      def apply_filter?(direction, details, options)
+        # check that it is the correct direction
+        result = if direction.to_sym == options[:direction] || options[:direction] == :bidirectional
+          if options.has_key?(:only) && [options[:only]].flatten.include?(details[:destination].name)
+            true
+          elsif options.has_key?(:except) && ![options[:except]].flatten.include?(details[:destination].name)
+            true
+          elsif !options.has_key?(:only) && !options.has_key?(:except)
+            true
+          end
+        end
+        result
+      end
+
+      def create_filter(filter, options)
+        filter_class = if filter.is_a?(String) or filter.is_a?(Symbol)
+          filter.to_s.camelize.constantize
+        elsif filter.is_a?(Class)
+          filter
+        end
+
+        if filter_class
+          if filter_class.respond_to?(:process) && (filter_class.method(:process).arity.abs > 0)
+            filter_class
+          elsif filter_class.instance_method(:initialize).arity.abs == 1
+            filter_class.new(options)
+          elsif filter_class.instance_method(:initialize).arity == 0
+            filter_class.new
+          else
+            raise "Filter #{filter} could not be created, no 'initialize' matched."
+          end
+        else
+          raise "Filter #{filter} could not be loaded, created, or used!"
+        end
+      end
 
       def prepare_application
-        # puts "Calling prepare_application!"
         Dispatcher.prepare_application_for_dispatch
-        # puts "Called prepare_application"
       end
 
       def reset_application
-        # puts "Calling reset_application!"
         Dispatcher.reset_application_after_dispatch
       end
       
@@ -163,9 +195,9 @@ module ActiveMessaging
             prepare_application
             _dispatch(message)
           rescue Object => exc
-            STDERR.puts "Dispatch exception: #{exc}"
-            STDERR.puts $!.backtrace.join("\n\t")
-            raise $!
+            ActiveMessaging.logger.error "Dispatch exception: #{exc}"
+            ActiveMessaging.logger.error exc.backtrace.join("\n\t")
+            raise exc
           ensure
             reset_application
           end
@@ -177,7 +209,9 @@ module ActiveMessaging
         when 'ERROR'
           ActiveMessaging.logger.error('Error from messaging infrastructure: ' + message.headers['message'])
         when 'MESSAGE'
-          ack = true
+          abort = false
+          processed = false
+
           subscriptions.each do |key, subscription| 
             if subscription.matches?(message) then
               routing = {
@@ -185,18 +219,37 @@ module ActiveMessaging
                 :destination=>subscription.destination,
                 :direction => :incoming
               }
-              execute_filter_chain(:in, message, routing) do |m| 
-                subscription.processor_class.new.process!(m)
+              begin
+                execute_filter_chain(:incoming, message, routing) do |m|
+                  result = subscription.processor_class.new.process!(m)
+                end
+              rescue ActiveMessaging::AbortMessageException
+                abort_message subscription, message
+                abort = true
+                return
+              ensure
+                acknowledge_message subscription, message unless abort
               end
-            
-              dispatched subscription, message if ack
-              ack = false
+
             end
           end
-          ActiveMessaging.logger.error("No-one responded to #{message}") if ack
+
+
+          ActiveMessaging.logger.error("No-one responded to #{message}") unless processed
         else 
           ActiveMessaging.logger.error('Unknown message command: ' + message.inspect)
         end
+      end
+
+      # acknowledge_message is called when the message has been processed w/o error by at least one processor
+      def acknowledge_message subscription, message
+        connection(subscription.destination.broker_name).received message, subscription.subscribe_headers
+      end
+
+      # abort_message is called when procesing the message raises a ActiveMessaging::AbortMessageException
+      # indicating the message should be returned to the destination so it can be tried again, later
+      def abort_message subscription, message
+        connection(subscription.destination.broker_name).unreceive message, subscription.subscribe_headers
       end
 
       def define
@@ -219,10 +272,6 @@ module ActiveMessaging
 
       alias find_queue find_destination
 
-      def trace_on destination
-        @@trace_on = destination
-      end
-
       def subscribe_to destination_name, processor, headers={}
         proc_name = processor.name.underscore
         proc_sym = processor.name.underscore.to_sym
@@ -244,7 +293,7 @@ module ActiveMessaging
         message = OpenStruct.new(:body => body, :headers => headers.reverse_merge(real_destination.publish_headers))
         begin
           Timeout.timeout timeout do
-            execute_filter_chain(:out, message, details) do |message|
+            execute_filter_chain(:outgoing, message, details) do |message|
               connection(real_destination.broker_name).send real_destination.value, message.body, message.headers
             end
           end
@@ -291,11 +340,11 @@ module ActiveMessaging
               if processor_groups.has_key? group_sym
                 @@current_processor_group = group_sym
               else
-                puts "Unrecognized process-group."
-                puts "You specified process-group #{pair[1]}, make sure this is specified in config/messaging.rb"
-                puts "  ActiveMessaging::Gateway.define do |s|"
-                puts "    s.processor_groups = { :group1 => [:foo_bar1_processor], :group2 => [:foo_bar2_processor] }"
-                puts "  end"
+                ActiveMessaging.logger.error "Unrecognized process-group."
+                ActiveMessaging.logger.error "You specified process-group #{pair[1]}, make sure this is specified in config/messaging.rb"
+                ActiveMessaging.logger.error "  ActiveMessaging::Gateway.define do |s|"
+                ActiveMessaging.logger.error "    s.processor_groups = { :group1 => [:foo_bar1_processor], :group2 => [:foo_bar2_processor] }"
+                ActiveMessaging.logger.error "  end"
                 exit
               end
             end
@@ -333,12 +382,12 @@ module ActiveMessaging
     end
     
     def subscribe
-      puts "=> Subscribing to #{destination.value} (processed by #{processor_class})"
+      ActiveMessaging.logger.error "=> Subscribing to #{destination.value} (processed by #{processor_class})"
       Gateway.connection(@destination.broker_name).subscribe(@destination.value, subscribe_headers) 
     end
 
     def unsubscribe
-      puts "=> Unsubscribing from #{destination.value} (processed by #{processor_class})"
+      ActiveMessaging.logger.error "=> Unsubscribing from #{destination.value} (processed by #{processor_class})"
       Gateway.connection(destination.broker_name).unsubscribe(destination.value, subscribe_headers)
     end
   end

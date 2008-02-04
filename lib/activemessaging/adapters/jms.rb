@@ -104,6 +104,10 @@ module ActiveMessaging
           #do nothing
         end
         
+        def unreceive message, headers={}
+          # do nothing
+        end
+
         def close
           @consumers.each {|k, c| c.stop }
           @connection.stop

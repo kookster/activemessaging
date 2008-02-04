@@ -4,6 +4,9 @@ require 'test/unit'
 
 module ActiveMessaging #:nodoc:
 
+  def self.reload_activemessaging
+  end
+
   class Gateway
   
     def self.reset
@@ -12,7 +15,6 @@ module ActiveMessaging #:nodoc:
       @@filters = []
       @@subscriptions = {}
       @@named_destinations = {}
-      @@trace_on = nil
       @@processor_groups = {}
       @@current_processor_group = nil
       @@connections = {}

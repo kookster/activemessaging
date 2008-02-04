@@ -88,6 +88,10 @@ module ActiveMessaging
         def received message, headers={}
           delete_message message
         end
+
+        def unreceive message, headers={}
+          # do nothing; by not deleting the message will eventually become visible again
+        end
         
         protected
         

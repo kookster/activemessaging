@@ -32,7 +32,7 @@ class TracerTest < Test::Unit::TestCase
       s.queue :hello_world, '/queue/helloWorld'
       s.queue :trace, '/queue/trace'
 
-      s.filter TraceFilter.new(:trace)
+      s.filter :trace_filter, :queue=>:trace
     end
     
     TestProcessor.subscribes_to :hello_world

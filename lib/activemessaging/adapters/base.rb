@@ -44,6 +44,11 @@ module ActiveMessaging
         # called after a message is successfully received and processed
         def received message, headers={}
         end
+
+        # called after a message is successfully received but unsuccessfully processed
+        # purpose is to return the message to the destination so receiving and processing and be attempted again 
+        def unreceive message, headers={}
+        end
         
       end
 

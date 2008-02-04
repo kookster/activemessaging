@@ -1,8 +1,8 @@
-class TraceFilter
+class TraceFilter< ActiveMessaging::Filter
   include ActiveMessaging::MessageSender
   
-  def initialize(queue)
-    @queue = queue
+  def initialize(options)
+    @queue = options[:queue]
     TraceFilter.publishes_to @queue
   end
   
@@ -27,7 +27,7 @@ class TraceFilter
                         "</received>"
       end
     end
-    yield
+
   end
   
 end

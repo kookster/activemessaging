@@ -1,13 +1,54 @@
 require File.dirname(__FILE__) + '/test_helper'
 
+class InitializeFilter
+  
+  attr_accessor :options
+
+  def initialize(options)
+    @options = options
+  end
+  
+  def process(message, details={})
+    puts "ObjectFilter process called!"
+  end
+end
+
 class GatewayTest < Test::Unit::TestCase
 
+
+  class ClassFilter
+    
+    def initialize
+      raise "Don't try and construct one of these please"
+    end
+    
+    class << self
+      def process(message, details={})
+        puts "ClassFilter process called!"
+      end
+    end
+  end
+
+  class ObjectFilter
+    def process(message, details={})
+      puts "ObjectFilter process called!"
+    end
+  end
 
   class TestProcessor < ActiveMessaging::Processor
     include ActiveMessaging::MessageSender
     #subscribes_to :testqueue
     def on_message(message)
       @test_message = true
+    end
+  end
+
+  class TestRetryProcessor < ActiveMessaging::Processor
+    include ActiveMessaging::MessageSender
+    #subscribes_to :testqueue
+    def on_message(message)
+      puts "TestRetryProcessor - about to raise exception"
+      raise ActiveMessaging::AbortMessageException.new("Cause a retry!")
     end
   end
 
@@ -19,6 +60,28 @@ class GatewayTest < Test::Unit::TestCase
 
   def teardown
     ActiveMessaging::Gateway.reset
+  end
+  
+  
+  def test_create_filter
+    filter_obj = ActiveMessaging::Gateway.create_filter('gateway_test/object_filter', {:direction=>:incoming, :name=>'test1'})
+    assert filter_obj
+    assert filter_obj.is_a?(GatewayTest::ObjectFilter)
+    
+    filter_obj = ActiveMessaging::Gateway.create_filter('initialize_filter', {:direction=>:incoming, :name=>'test2'})
+    assert filter_obj
+    assert filter_obj.is_a?(GatewayTest::InitializeFilter)
+    assert_equal filter_obj.options, {:direction=>:incoming, :name=>'test2'}
+    
+    filter_obj = ActiveMessaging::Gateway.create_filter(:initialize_filter, {:direction=>:incoming, :name=>'test2'})
+    assert filter_obj
+    assert filter_obj.is_a?(GatewayTest::InitializeFilter)
+    assert_equal filter_obj.options, {:direction=>:incoming, :name=>'test2'}
+
+    filter_obj = ActiveMessaging::Gateway.create_filter(:'gateway_test/class_filter', {:direction=>:incoming, :name=>'test2'})
+    assert filter_obj
+    assert filter_obj.is_a?(Class)
+    assert_equal filter_obj.name, "GatewayTest::ClassFilter"
   end
   
   def test_register_adapter 
@@ -77,14 +140,24 @@ class GatewayTest < Test::Unit::TestCase
     end
   end
 
-  def test_dispatched
+  def test_acknowledge_message
     ActiveMessaging::Gateway.destination :hello_world, '/queue/helloWorld'
     ActiveMessaging::Gateway.subscribe_to :hello_world, TestProcessor, headers={}
     sub = ActiveMessaging::Gateway.subscriptions.values.last
     dest = ActiveMessaging::Adapters::Test::Destination.new '/queue/helloWorld'
     msg = ActiveMessaging::Adapters::Test::Message.new({}, nil, "message_body", nil, dest)
-    ActiveMessaging::Gateway.dispatched sub, msg
+    ActiveMessaging::Gateway.acknowledge_message sub, msg
     assert_equal msg, ActiveMessaging::Gateway.connection.received_messages.first
+  end
+
+  def test_abort_message
+    ActiveMessaging::Gateway.destination :hello_world, '/queue/helloWorld'
+    ActiveMessaging::Gateway.subscribe_to :hello_world, TestRetryProcessor, headers={}
+    sub = ActiveMessaging::Gateway.subscriptions.values.last
+    dest = ActiveMessaging::Adapters::Test::Destination.new '/queue/helloWorld'
+    msg = ActiveMessaging::Adapters::Test::Message.new({}, nil, "message_body", nil, dest)
+    ActiveMessaging::Gateway.dispatch(msg)
+    assert_equal msg, ActiveMessaging::Gateway.connection.unreceived_messages.first
   end
 
   def test_receive

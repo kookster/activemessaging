@@ -2,7 +2,18 @@ module ActiveMessaging
 
   VERSION = "0.5" #maybe this should be higher, but I'll let others judge :)
 
+  # Used to indicate that the processing for a thread shoud complete
   class StopProcessingException < Interrupt #:nodoc:
+  end
+
+  # Used to indicate that the processing on a message should cease, 
+  # and the message should be returned back to the broker as best it can be
+  class AbortMessageException < Exception #:nodoc:
+  end
+
+  # Used to indicate that the processing on a message should cease, 
+  # but no further action is required
+  class StopFilterException < Exception #:nodoc:
   end
 
   def ActiveMessaging.logger
@@ -13,12 +24,14 @@ module ActiveMessaging
 
   # DEPRECATED, so I understand, but I'm using it nicely below.
   def self.load_extensions
-    require 'activemessaging/gateway'
-    require 'activemessaging/processor'
-    require 'activemessaging/trace_filter'
-    require 'activemessaging/adapter'
-    require 'activemessaging/support'
     require 'logger'
+    require 'activemessaging/support'
+    require 'activemessaging/gateway'
+    require 'activemessaging/adapter'
+    require 'activemessaging/message_sender'
+    require 'activemessaging/processor'
+    require 'activemessaging/filter'
+    require 'activemessaging/trace_filter'
 
     # load all under the adapters dir 
     Dir[RAILS_ROOT + '/vendor/plugins/activemessaging/lib/activemessaging/adapters/*.rb'].each{|a| 
@@ -38,13 +51,15 @@ module ActiveMessaging
     rescue MissingSourceFile
       logger.debug "ActiveMessaging: no '#{path}' file to load"
     rescue
-      raise $!, " ActiveMessaging: problems trying to load '#{path}'"
+      raise $!, " ActiveMessaging: problems trying to load '#{path}': \n\t#{$!.message}"
     end
   end
 
   def self.load_processors(first=true)
     #Load the parent processor.rb, then all child processor classes
     load RAILS_ROOT + '/vendor/plugins/activemessaging/lib/activemessaging/processor.rb' unless defined?(ActiveMessaging::Processor)
+    load RAILS_ROOT + '/vendor/plugins/activemessaging/lib/activemessaging/message_sender.rb' unless defined?(ActiveMessaging::MessageSender)
+    load RAILS_ROOT + '/vendor/plugins/activemessaging/lib/activemessaging/filter.rb' unless defined?(ActiveMessaging::Filter)
     logger.debug "ActiveMessaging: Loading #{RAILS_ROOT + '/app/processors/application.rb'}" if first
     load RAILS_ROOT + '/app/processors/application.rb'
     Dir[RAILS_ROOT + '/app/processors/*.rb'].each do |f|
@@ -56,7 +71,12 @@ module ActiveMessaging
   end
 
   def self.reload_activemessaging
-    # puts "Called: reload_activemessaging"    
+    # this is resetting the messaging.rb
+    ActiveMessaging::Gateway.filters = []
+    ActiveMessaging::Gateway.named_destinations = {}
+    ActiveMessaging::Gateway.processor_groups = {}
+
+    # now load the config
     load_config
     load_processors(false)
   end
@@ -91,10 +111,10 @@ EOM
 end
 
 #load these once to start with
-ActiveMessaging.load_extensions
-ActiveMessaging.load_config
+ActiveMessaging.load_activemessaging
 
-#load these on each request - leveraging Dispatcher semantics for consistency
+
+# reload these on each request - leveraging Dispatcher semantics for consistency
 require 'dispatcher' unless defined?(::Dispatcher)
 
 # add processors and config to on_prepare if supported (rails 1.2+)

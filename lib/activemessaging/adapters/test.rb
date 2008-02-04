@@ -7,13 +7,14 @@ module ActiveMessaging
         include ActiveMessaging::Adapter
         register :test
         
-        attr_accessor :config, :subscriptions, :destinations, :connected, :received_messages
+        attr_accessor :config, :subscriptions, :destinations, :connected, :received_messages, :unreceived_messages
         
         def initialize cfg
           @config = cfg
           @subscriptions = []
           @destinations = []
           @received_messages = []
+          @unreceived_messages = []
           @connected = true
         end
         
@@ -21,6 +22,7 @@ module ActiveMessaging
           @subscriptions = []
           @destinations = []
           @received_messages = []
+          @unreceived_messages = []
           @connected = false
         end
         
@@ -61,11 +63,19 @@ module ActiveMessaging
         def received message, headers={}
           @received_messages << message
         end
+
+        def unreceive message, headers={}
+          @unreceived_messages << message
+        end
         
         #test helper methods
         def find_message destination_name, body
           all_messages.find do |m|
-            m.headers['destination'] == destination_name && m.body.to_s == body.to_s
+            m.headers['destination'] == destination_name && if body.is_a?(Regexp)
+              m.body =~ body
+            else
+              m.body == body.to_s
+            end
           end
         end
         

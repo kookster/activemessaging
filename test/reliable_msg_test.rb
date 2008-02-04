@@ -27,11 +27,11 @@ class ReliableMsgTest < Test::Unit::TestCase
   def test_subscribe_and_unsubscribe
     assert_nil @connection.subscriptions["#{@d}test_subscribe"]
     @connection.subscribe "#{@d}test_subscribe"
-    assert_equal 1, @connection.subscriptions["#{@d}test_subscribe"]
+    assert_equal 1, @connection.subscriptions["#{@d}test_subscribe"].count
     @connection.subscribe "#{@d}test_subscribe"
-    assert_equal 2, @connection.subscriptions["#{@d}test_subscribe"]
+    assert_equal 2, @connection.subscriptions["#{@d}test_subscribe"].count
     @connection.unsubscribe "#{@d}test_subscribe"
-    assert_equal 1, @connection.subscriptions["#{@d}test_subscribe"]
+    assert_equal 1, @connection.subscriptions["#{@d}test_subscribe"].count
     @connection.unsubscribe "#{@d}test_subscribe"
     assert_nil @connection.subscriptions["#{@d}test_subscribe"]
   end
@@ -40,6 +40,7 @@ class ReliableMsgTest < Test::Unit::TestCase
     @connection.subscribe "#{@d}test_send_and_receive"
     @connection.send "#{@d}test_send_and_receive", @message 
     message = @connection.receive
+    @connection.received message
     assert_equal @message, message.body
   end
 
@@ -51,12 +52,29 @@ class ReliableMsgTest < Test::Unit::TestCase
 
     @connection.send "#{@d}test_send_and_receive2", "message2" 
     message = @connection.receive
+    @connection.received message
     assert_equal "message2", message.body
 
     @connection.send "#{@d}test_send_and_receive3", "message3"
     message = @connection.receive
+    @connection.received message
     assert_equal "message3", message.body
 
+  end
+
+
+  def test_will_cause_sleep
+
+    begin
+      Timeout.timeout 10 do
+        @connection.subscribe "#{@d}test_will_cause_sleep"
+        message = @connection.receive
+        @connection.received message
+        assert false
+      end
+    rescue Timeout::Error=>toe
+      assert true
+    end
   end
   
 end

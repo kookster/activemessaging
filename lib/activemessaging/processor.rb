@@ -1,59 +1,43 @@
-require 'logger'
-
+# 'abstract' base class for ActiveMessaging processor classes
 module ActiveMessaging
-
-  # This is a module so that we can send messages from (for example) web page controllers
-  module MessageSender
-
-    def self.included(included_by)
-      class << included_by
-        def publishes_to destination_name
-          Gateway.find_destination destination_name
-        end
-
-        def receives_from destination_name
-          Gateway.find_destination destination_name
-        end
-      end
-    end
-
-    def publish destination_name, message, headers={}, timeout=10
-      Gateway.publish(destination_name, message, self.class, headers, timeout)
-    end
-
-    def receive destination_name, headers={}, timeout=10
-      Gateway.receive(destination_name, self.class, headers, timeout)
-    end
-
-  end
 
   class Processor
     include MessageSender
-    # include Reloadable
     
     attr_reader :message
   
+    class<<self
+      def subscribes_to destination_name, headers={}
+        ActiveMessaging::Gateway.subscribe_to destination_name, self, headers
+      end
+    end
+
     def logger()
       @@logger = ActiveMessaging.logger unless defined?(@@logger)
       @@logger
     end
     
-    class<<self
-      def subscribes_to destination_name, headers={}
-        ActiveMessaging::Gateway.subscribe_to destination_name, self, headers
-      end
+    def on_message(message)
+      raise NotImplementedError.new("Implement the on_message method in your own processor class that extends ActiveMessaging::Processor")
+    end
+
+    def on_error(exception)
+      raise exception
     end
     
     # Bind the processor to the current message so that the processor could
     # potentially access headers and other attributes of the message
     def process!(message)
       @message = message
-      on_message(message.body)
-    rescue
+      return on_message(message.body)
+    rescue Exception
       begin
         on_error($!)
-      rescue
-        logger.error "Processor:process! - error in on_error, will propagate no further: #{$!.message}"
+      rescue ActiveMessaging::AbortMessageException => rpe
+        logger.error "Processor:process! - AbortMessageException caught."
+        raise rpe
+      rescue Exception => ex
+        logger.error "Processor:process! - error in on_error, will propagate no further: #{ex.message}"
       end
     end
 
