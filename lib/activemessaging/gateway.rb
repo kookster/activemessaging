@@ -214,6 +214,7 @@ module ActiveMessaging
 
           subscriptions.each do |key, subscription| 
             if subscription.matches?(message) then
+              processed = true
               routing = {
                 :receiver=>subscription.processor_class, 
                 :destination=>subscription.destination,
@@ -230,10 +231,8 @@ module ActiveMessaging
               ensure
                 acknowledge_message subscription, message unless abort
               end
-
             end
           end
-
 
           ActiveMessaging.logger.error("No-one responded to #{message}") unless processed
         else 
@@ -258,7 +257,7 @@ module ActiveMessaging
       end
 
       def destination destination_name, destination, publish_headers={}, broker='default'
-        # raise "You already defined #{destination_name} to #{named_destinations[destination_name].value}" if named_destinations.has_key?(destination_name)
+        raise "You already defined #{destination_name} to #{named_destinations[destination_name].value}" if named_destinations.has_key?(destination_name)
         named_destinations[destination_name] = Destination.new destination_name, destination, publish_headers, broker
       end
       
