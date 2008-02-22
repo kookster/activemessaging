@@ -321,7 +321,7 @@ module ActiveMessaging
         attr_accessor :name, :pathinfo, :domain, :visibility_timeout
 
         def self.from_url url
-          return Queue.new($3,$2,$1) if url =~ /^http:\/\/(.+)\/(.+)\/(\w+)$/
+          return Queue.new($3,$2,$1) if url =~ /^http:\/\/(.+)\/(.+)\/([\w-]+)$/
           raise "Bad Queue URL: #{url}"
         end
 
