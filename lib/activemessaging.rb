@@ -57,11 +57,11 @@ module ActiveMessaging
 
   def self.load_processors(first=true)
     #Load the parent processor.rb, then all child processor classes
-    load RAILS_ROOT + '/vendor/plugins/activemessaging/lib/activemessaging/processor.rb' unless defined?(ActiveMessaging::Processor)
     load RAILS_ROOT + '/vendor/plugins/activemessaging/lib/activemessaging/message_sender.rb' unless defined?(ActiveMessaging::MessageSender)
+    load RAILS_ROOT + '/vendor/plugins/activemessaging/lib/activemessaging/processor.rb' unless defined?(ActiveMessaging::Processor)
     load RAILS_ROOT + '/vendor/plugins/activemessaging/lib/activemessaging/filter.rb' unless defined?(ActiveMessaging::Filter)
     logger.debug "ActiveMessaging: Loading #{RAILS_ROOT + '/app/processors/application.rb'}" if first
-    load RAILS_ROOT + '/app/processors/application.rb'
+    load RAILS_ROOT + '/app/processors/application.rb' if File.exist?("#{RAILS_ROOT}/app/processors/application.rb")
     Dir[RAILS_ROOT + '/app/processors/*.rb'].each do |f|
       unless f.match(/\/application.rb/)
         logger.debug "ActiveMessaging: Loading #{f}" if first
