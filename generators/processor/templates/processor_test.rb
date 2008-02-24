@@ -6,7 +6,6 @@ class <%= class_name %>ProcessorTest < Test::Unit::TestCase
   include ActiveMessaging::TestHelper
   
   def setup
-    load File.dirname(__FILE__) + "/../../app/processors/<%= file_name %>_processor.rb"
     @processor = <%= class_name %>Processor.new
   end
   

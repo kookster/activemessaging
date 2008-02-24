@@ -4,8 +4,8 @@ require 'test/unit'
 
 module ActiveMessaging #:nodoc:
 
-  def self.reload_activemessaging
-  end
+  # def self.reload_activemessaging
+  # end
 
   class Gateway
   
@@ -81,7 +81,7 @@ module ActiveMessaging #:nodoc:
     def setup_with_a13g
       setup_without_a13g
       self.class.setup_method.bind(self).call unless self.class.setup_method.nil?
-      ActiveMessaging.load_config
+      ActiveMessaging.reload_activemessaging
     end
 
     def teardown_with_a13g

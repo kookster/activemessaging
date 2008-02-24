@@ -70,12 +70,12 @@ class GatewayTest < Test::Unit::TestCase
     
     filter_obj = ActiveMessaging::Gateway.create_filter('initialize_filter', {:direction=>:incoming, :name=>'test2'})
     assert filter_obj
-    assert filter_obj.is_a?(GatewayTest::InitializeFilter)
+    assert filter_obj.is_a?(InitializeFilter)
     assert_equal filter_obj.options, {:direction=>:incoming, :name=>'test2'}
     
     filter_obj = ActiveMessaging::Gateway.create_filter(:initialize_filter, {:direction=>:incoming, :name=>'test2'})
     assert filter_obj
-    assert filter_obj.is_a?(GatewayTest::InitializeFilter)
+    assert filter_obj.is_a?(InitializeFilter)
     assert_equal filter_obj.options, {:direction=>:incoming, :name=>'test2'}
 
     filter_obj = ActiveMessaging::Gateway.create_filter(:'gateway_test/class_filter', {:direction=>:incoming, :name=>'test2'})
@@ -93,6 +93,17 @@ class GatewayTest < Test::Unit::TestCase
     ActiveMessaging::Gateway.destination :hello_world, '/queue/helloWorld'
     dest = ActiveMessaging::Gateway.named_destinations[:hello_world]
     assert_equal :hello_world, dest.name
+  end
+
+  def test_destination_duplicates
+    ActiveMessaging::Gateway.destination :hello_world, '/queue/helloWorld'
+    dest = ActiveMessaging::Gateway.named_destinations[:hello_world]
+    assert_equal :hello_world, dest.name
+
+    # make sure a dupe name causes an error
+    assert_raises RuntimeError do 
+      ActiveMessaging::Gateway.destination :hello_world, '/queue/helloWorld2'
+    end
   end
 
   def test_connection
@@ -165,6 +176,13 @@ class GatewayTest < Test::Unit::TestCase
     ActiveMessaging::Gateway.publish :hello_world, "test_publish body", self.class, headers={}, timeout=10
     msg = ActiveMessaging::Gateway.receive :hello_world, self.class, headers={}, timeout=10
     assert_not_nil ActiveMessaging::Gateway.connection.find_message('/queue/helloWorld', "test_publish body")
+  end
+
+  def test_reload
+    ActiveMessaging.reload_activemessaging
+    size = ActiveMessaging::Gateway.named_destinations.size
+    ActiveMessaging.reload_activemessaging
+    assert_equal size, ActiveMessaging::Gateway.named_destinations.size
   end
 
   ## figure out how to test these better - start in a thread perhaps?

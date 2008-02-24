@@ -1,5 +1,10 @@
 require File.dirname(__FILE__) + '/test_helper'
 
+module ActiveMessaging #:nodoc:
+  def self.reload_activemessaging
+  end
+end
+
 class FilterTest < Test::Unit::TestCase
   
   class MockFilter < ActiveMessaging::Filter

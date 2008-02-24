@@ -22,7 +22,7 @@ module ActiveMessaging
 
             @access_key_id=cfg[:access_key_id]
             @secret_access_key=cfg[:secret_access_key]
-            @aws_version = cfg[:aws_version]            || '2006-04-01' 
+            @aws_version = cfg[:aws_version]            || '2006-04-01'
             @content_type = cfg[:content_type]          || 'text/plain'
             @host = cfg[:host]                          || 'queue.amazonaws.com'
             @port = cfg[:port]                          || 80
