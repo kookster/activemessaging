@@ -2,6 +2,9 @@
 module ActiveMessaging
   class Filter
 
+    #automatically make it so filters are message senders
+    include MessageSender
+
     # give filters easy access to the logger
     def logger()
       @@logger = ActiveMessaging.logger unless defined?(@@logger)
