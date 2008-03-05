@@ -353,7 +353,7 @@ module ActiveMessaging
       end
       
       def load_connection_configuration(label='default')
-        @broker_yml = YAML.load_file(File.join(RAILS_ROOT, 'config', 'broker.yml')) if @broker_yml.nil?
+        @broker_yml = YAML::load(ERB.new(IO.read(File.join(RAILS_ROOT, 'config', 'broker.yml'))).result) if @broker_yml.nil?
         if label == 'default'
           config = @broker_yml[RAILS_ENV].symbolize_keys
         else
