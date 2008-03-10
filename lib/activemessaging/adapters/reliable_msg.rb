@@ -91,7 +91,6 @@ module ActiveMessaging
           start = current_subscription
           while true
             self.current_subscription = ((current_subscription < subscriptions.length-1) ? current_subscription + 1 : 0)
-            puts "sleep #{@poll_interval}..." if (current_subscription == start)
             sleep poll_interval if (current_subscription == start)
             destination_name = subscriptions.keys.sort[current_subscription]
             destination = destinations[destination_name]
