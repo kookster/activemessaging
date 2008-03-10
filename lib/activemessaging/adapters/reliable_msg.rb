@@ -109,6 +109,7 @@ module ActiveMessaging
                 # now call a get on the destination - it will use the transaction
                 #the commit or the abort will occur in the received or unreceive methods
                 reliable_msg = destination.get subscriptions[destination_name].headers[:selector]
+                @tx[:qm].commit(@tx[:tid]) if reliable_msg.nil?
 
               rescue Object=>err
                 #abort the transaction on error
