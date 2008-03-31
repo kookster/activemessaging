@@ -101,11 +101,17 @@ module ActiveMessaging
         end
 
         def received message, headers={}
-          delete_message message
+          begin
+            delete_message message
+          rescue Object=>exception
+            logger.error "Exception in ActiveMessaging::Adapters::AmazonSQS::Connection.received() logged and ignored: "
+            logger.error exception
+          end
         end
 
         def unreceive message, headers={}
           # do nothing; by not deleting the message will eventually become visible again
+          return true
         end
         
         protected
@@ -181,7 +187,6 @@ module ActiveMessaging
         end
 
       	def make_request(action, url=nil, params = {})
-      	  
       	  url ||= @aws_url
       	  
       		# Add Actions
@@ -207,32 +212,27 @@ module ActiveMessaging
           # puts "request_url = #{request_url}"
           request = Net::HTTP::Get.new(request_url)
 
-          # You should always retry a 5xx error, as some of these are expected
-    	    tryit = true
           retry_count = 0
-          while tryit
+          while retry_count < @request_retry_count.to_i
+      		  retry_count ++
             begin
               response = SQSResponse.new(http_request(host,port,request))
-              if (response.http_response == Net::HTTPServerError || response.nil?) && retry_count <= @request_retry_count
-          		  retry_count ++
-          		  sleep(@reconnect_delay)
-        		  else
-                tryit = false
-      		    end
+              check_errors(response)
+              return response
             rescue StandardError, TimeoutError
               raise $! unless reliable
-        		  retry_count ++
         		  sleep(@reconnect_delay)
             end
           end
-          check_errors(response)
         end
 
+        # I wrap this so I can move to a different client, or easily mock for testing
         def http_request h, p, r
           return Net::HTTP.start(h, p){ |http| http.request(r) }
         end
 
         def check_errors(response)
+          raise "http response was nil" if (response.nil?)
           raise response.errors if (response && response.errors?)
           response
         end
@@ -315,17 +315,14 @@ module ActiveMessaging
         end
 
         def errors
-          msg = ""
-          if http_response.kind_of?(Net::HTTPSuccess)
-            msg = "Errors: "
-          else
-            msg = "HTTP Error: #{http_response.code} : #{http_response.message}"
-          end
+          return "HTTP Error: #{http_response.code} : #{http_response.message}" unless http_response.kind_of?(Net::HTTPSuccess)
 
+          msg = nil
           each_node('//Error') { |n|
+            msg ||= ""
             c = n.elements['Code'].text
             m = n.elements['Message'].text
-            msg << ", " if msg != "Errors: "
+            msg << ", " if msg != ""
             msg << "#{c} : #{m}"
           }
 
