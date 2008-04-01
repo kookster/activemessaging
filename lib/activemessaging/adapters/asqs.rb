@@ -89,6 +89,7 @@ module ActiveMessaging
           raise "No subscriptions to receive messages from." if (@subscriptions.nil? || @subscriptions.empty?)
           start = @current_subscription
           while true
+            # puts "calling receive..."
             @current_subscription = ((@current_subscription < @subscriptions.length-1) ? @current_subscription + 1 : 0)
             sleep poll_interval if (@current_subscription == start)
             queue_name = @subscriptions.keys.sort[@current_subscription]
@@ -187,6 +188,7 @@ module ActiveMessaging
         end
 
       	def make_request(action, url=nil, params = {})
+          # puts "make_request a=#{action} u=#{url} p=#{params}"
       	  url ||= @aws_url
       	  
       		# Add Actions
@@ -214,13 +216,15 @@ module ActiveMessaging
 
           retry_count = 0
           while retry_count < @request_retry_count.to_i
-      		  retry_count ++
+      		  retry_count = retry_count + 1
+            # puts "make_request try retry_count=#{retry_count}"
             begin
               response = SQSResponse.new(http_request(host,port,request))
               check_errors(response)
               return response
-            rescue StandardError, TimeoutError
-              raise $! unless reliable
+            rescue Object=>ex
+              # puts "make_request caught #{ex}"
+              raise ex unless reliable
         		  sleep(@reconnect_delay)
             end
           end
