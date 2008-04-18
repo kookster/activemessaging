@@ -67,7 +67,9 @@ EOM
     <ReceiveMessageResponse>
       <Message>
         <MessageId>11YEJMCHE2DM483NGN40|3H4AA8J7EJKM0DQZR7E1|PT6DRTB278S4MNY77NJ0</MessageId>
-        <MessageBody>#{@message}</MessageBody>
+        <ReceiptHandle>some handle value</ReceiptHandle>
+        <Body>#{@message}</Body>
+        <MD5OfBody>not really the md5</MD5OfBody>
       </Message>
       <ResponseStatus>
         <StatusCode>Success</StatusCode>
@@ -75,6 +77,7 @@ EOM
       </ResponseStatus>
     </ReceiveMessageResponse>
 EOM
+
     message = @connection.receive
     assert_equal @message, message.body
   end
