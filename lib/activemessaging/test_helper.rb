@@ -8,7 +8,7 @@ module ActiveMessaging #:nodoc:
   # end
 
   class Gateway
-  
+    
     def self.reset
       unsubscribe
       disconnect
@@ -18,7 +18,21 @@ module ActiveMessaging #:nodoc:
       @@processor_groups = {}
       @@current_processor_group = nil
       @@connections = {}
+    end    
+  end
+  
+  module MessageSender
+    
+    @@__a13g_initialized__ = false
+    def publish_with_reset(destination_name, message, headers={}, timeout=10)
+      unless @@__a13g_initialized__
+        ActiveMessaging.reload_activemessaging 
+        @@__a13g_initialized__ = true
+      end
+      publish_without_reset(destination_name, message, headers, timeout)
     end
+
+    alias_method_chain :publish, :reset
     
   end
   
@@ -38,57 +52,58 @@ module ActiveMessaging #:nodoc:
 
   module TestHelper
     
-    #Many thanks must go to the fixture_caching plugin
-    #for showing how to properly alias setup and teardown
-    #from within the tyranny of the fixtures code
-    def self.included(base)
-      base.extend(ClassMethods)
-
-      class << base
-        alias_method_chain :method_added, :a13g_hack
-      end
-      
-      base.class_eval do
-        alias_method_chain :setup, :a13g
-        alias_method_chain :teardown, :a13g
-      end
-    end
+    # #Many thanks must go to the ActiveRecord fixture code
+    # #for showing how to properly alias setup and teardown
+    # def self.included(base)
+    #   base.extend(ClassMethods)
+    # 
+    #   class << base
+    #     alias_method_chain :method_added, :a13g
+    #   end
+    #   
+    # end
     
-    module ClassMethods
-      def method_added_with_a13g_hack method
-        return if caller.first.match(/#{__FILE__}/)
-        case method.to_sym
-        when :setup
-          @setup_method = instance_method(:setup)
-          alias_method :setup, :setup_with_a13g
-        when :teardown
-          @teardown_method = instance_method(:teardown)
-          alias_method :teardown, :teardown_with_a13g
-        else
-          method_added_without_a13g_hack(method)
-        end
-      end
-      
-      def setup_method
-        @setup_method
-      end
-      
-      def teardown_method
-        @teardown_method
-      end
-    end
+    # module ClassMethods
+    # 
+      # def method_added_with_a13g(method)
+      #   return if @__a13g_disable_method_added__
+      #   @__a13g_disable_method_added__ = true
+      #   
+      #   case method.to_s
+      #   when 'setup'
+      #     unless method_defined?(:setup_without_a13g)
+      #       alias_method :setup_without_a13g, :setup
+      #       define_method(:full_setup) do
+      #         setup_with_a13g
+      #         setup_without_a13g
+      #       end
+      #     end
+      #     alias_method :setup, :full_setup
+      #   when 'teardown'
+      #     unless method_defined?(:teardown_without_a13g)
+      #       alias_method :teardown_without_a13g, :teardown
+      #       define_method(:full_teardown) do
+      #         teardown_without_a13g
+      #         teardown_with_a13g
+      #       end
+      #     end
+      #     alias_method :teardown, :full_teardown
+      #   end
+      # 
+      #   method_added_without_a13g(method)
+      #   
+      #   @__a13g_disable_method_added__ = false
+      # end
+    # 
+    # end
     
-    def setup_with_a13g
-      setup_without_a13g
-      self.class.setup_method.bind(self).call unless self.class.setup_method.nil?
-      ActiveMessaging.reload_activemessaging
-    end
-
-    def teardown_with_a13g
-      teardown_without_a13g
-      self.class.teardown_method.bind(self).call unless self.class.teardown_method.nil?
-      ActiveMessaging::Gateway.reset
-    end
+    # def setup_with_a13g
+    #   ActiveMessaging.reload_activemessaging
+    # end
+    # 
+    # def teardown_with_a13g
+    #   ActiveMessaging::Gateway.reset
+    # end
 
     def mock_publish destination, body, publisher=nil, headers={}
       ActiveMessaging::Gateway.publish destination, body, publisher, headers

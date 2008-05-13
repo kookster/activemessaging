@@ -48,12 +48,6 @@ module ActiveMessaging
           self.begin(transaction_id)
           begin
 
-            #check to see if the ack mode is client, and if it is, ack it in this transaction
-            if (headers[:ack] === 'client')
-              # ack the original message
-              self.ack message.headers['message-id'], message.headers.merge(:transaction=>transaction_id)
-            end
-
             if retry_count < @retryMax
               # now send the message back to the destination
               #  set the headers for message id, priginal message id, and retry count
@@ -71,6 +65,12 @@ module ActiveMessaging
               # send the 'poison pill' message to the dead letter queue
               self.send @deadLetterQueue, message.body, message.headers.merge(:transaction=>transaction_id)
 
+            end
+
+            #check to see if the ack mode is client, and if it is, ack it in this transaction
+            if (headers[:ack] === 'client')
+              # ack the original message
+              self.ack message.headers['message-id'], message.headers.merge(:transaction=>transaction_id)
             end
 
             # now commit the transaction

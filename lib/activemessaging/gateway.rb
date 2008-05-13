@@ -25,15 +25,18 @@ module ActiveMessaging
         # subscribe - creating connections along the way
         subscribe
 
-        # for each conection, start a thread
+        # for each connection, start a thread
         @@connections.each do |name, conn|
           @@connection_threads[name] = Thread.start do
             while @@running
               begin
                 Thread.current[:message] = nil
                 Thread.current[:message] = conn.receive
-              rescue StopProcessingException
+              #catch these but then stop looping
+              rescue StopProcessingException=>spe
                 ActiveMessaging.logger.error "ActiveMessaging: thread[#{name}]: Processing Stopped - receive interrupted, will process last message if already received"
+                # break
+              #catch all others, but go back and try and recieve again
               rescue Object=>exception
                 ActiveMessaging.logger.error "ActiveMessaging: thread[#{name}]: Exception from connection.receive: #{exception.message}\n" + exception.backtrace.join("\n\t")
               ensure
@@ -42,6 +45,7 @@ module ActiveMessaging
               end
               Thread.pass
             end
+            ActiveMessaging.logger.error "ActiveMessaging: thread[#{name}]: receive loop terminated"
           end
         end
         
@@ -84,7 +88,7 @@ module ActiveMessaging
                 msg = thread[:message]
                 thread.exit
                 thread = Thread.start do
-                  begin 
+                  begin
                     Thread.current[:message] = msg
                     dispatch Thread.current[:message]
                   ensure
@@ -137,7 +141,7 @@ module ActiveMessaging
               filter_obj = create_filter(filter, options)
               filter_obj.process(message, details)
             rescue ActiveMessaging::StopFilterException => sfe
-              ActiveMessaging.logger.error "Filter: #{filter_obj.inspect} threw StopProcessingException: #{sfe.message}"
+              ActiveMessaging.logger.error "Filter: #{filter_obj.inspect} threw StopFilterException: #{sfe.message}"
               return
             end
           end
