@@ -1,4 +1,3 @@
-gem 'stomp'
 require 'stomp'
 
 module ActiveMessaging
