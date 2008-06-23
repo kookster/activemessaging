@@ -16,6 +16,15 @@ development:
     # port: 61613
     # reliable: true
     # reconnectDelay: 5
+    
+    # NEW! enable stomp retry logic
+    #  will resend errored out messages to be retried when on_error throws ActiveMessaging::AbortMessageException
+    #
+    #  - Max number of times to retry an aborted message, for 0, will not retry (default)
+    # maxRetry:0
+    #
+    #  - If error still occurs after maxRetry, send message to specified dead letter queue
+    # deadLetterQueue: '/queue/activemessaging/deadletter'
 
     ###################################
     # Websphere MQ Adapter Properties #

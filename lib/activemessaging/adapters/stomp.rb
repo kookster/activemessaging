@@ -47,29 +47,39 @@ module ActiveMessaging
           self.begin(transaction_id)
           begin
 
-            if retry_count < @retryMax
-              # now send the message back to the destination
-              #  set the headers for message id, priginal message id, and retry count
-              message.headers['a13g-original-message-id'] = message.headers['message-id'] unless message.headers.has_key?('a13g-original-message-id')
-              message.headers['a13g-original-timestamp'] = message.headers['timestamp'] unless message.headers.has_key?('a13g-original-timestamp')
-              message.headers.delete('message-id')
-              message.headers.delete('timestamp')
-              message.headers['a13g-retry-count'] = retry_count + 1
+            if @retryMax > 0
+              retry_headers = message.headers.stringify_keys
+              retry_headers['transaction']= transaction_id
+              retry_headers.delete('content-length')
+              retry_headers.delete('content-type')
+              
+              if retry_count < @retryMax
+                # now send the message back to the destination
+                #  set the headers for message id, priginal message id, and retry count
+                retry_headers['a13g-original-message-id'] = retry_headers['message-id'] unless retry_headers.has_key?('a13g-original-message-id')
+                retry_headers.delete('message-id')
 
-              # send the updated message to retry in the same transaction
-              self.send message.headers['destination'], message.body, message.headers.merge(:transaction=>transaction_id)
+                retry_headers['a13g-original-timestamp'] = retry_headers['timestamp'] unless retry_headers.has_key?('a13g-original-timestamp')
+                retry_headers.delete('timestamp')
 
-            elsif retry_count >= @retryMax && @deadLetterQueue
+                retry_headers['a13g-retry-count'] = retry_count + 1
 
-              # send the 'poison pill' message to the dead letter queue
-              self.send @deadLetterQueue, message.body, message.headers.merge(:transaction=>transaction_id)
+                # send the updated message to retry in the same transaction
+                self.send retry_headers['destination'], message.body, retry_headers
+
+              elsif retry_count >= @retryMax && @deadLetterQueue
+                # send the 'poison pill' message to the dead letter queue
+                retry_headers['a13g-original-destination'] = retry_headers.delete('destination')
+                retry_headers.delete('message-id')
+                self.send @deadLetterQueue, message.body, retry_headers
+              end
 
             end
 
             #check to see if the ack mode is client, and if it is, ack it in this transaction
             if (headers[:ack] === 'client')
               # ack the original message
-              self.ack message.headers['message-id'], message.headers.merge(:transaction=>transaction_id)
+              self.ack message.headers['message-id'], message.headers.stringify_keys.merge('transaction'=>transaction_id)
             end
 
             # now commit the transaction
@@ -79,6 +89,7 @@ module ActiveMessaging
             self.abort transaction_id
             raise exc
           end
+
         end
 
       end
