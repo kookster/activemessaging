@@ -9,7 +9,8 @@ development:
     # Stomp Adapter Properties #
     ############################
     adapter: stomp
-    # properties below are all defaults for this adapter
+
+    ## properties below are all defaults for this adapter
     # login: ""
     # passcode: ""
     # host: localhost
@@ -26,6 +27,7 @@ development:
     # If error still occurs after retryMax, send message to specified dead letter queue
     # deadLetterQueue: '/queue/activemessaging/deadletter'
 
+
     ###################################
     # Websphere MQ Adapter Properties #
     ###################################
@@ -33,12 +35,14 @@ development:
     # q_mgr_name: ""
     # poll_interval: .1
 
+
     #################################
     # Amazon SQS Adapter Properties #
     #################################
     # adapter: asqs
     # access_key_id: XXXXXXXXXXXXXXXXXXXX
     # secret_access_key: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+
     ## properties below are all defaults for this adapter
     # host: queue.amazonaws.com
     # port: 80
@@ -49,10 +53,12 @@ development:
     # poll_interval: 1
     # cache_queue_list: true
 
+
     ########################################
     # ReliableMessaging Adapter Properties #
     ########################################
     # adapter: reliable_msg
+
     ## properties below are all defaults for this adapter
     # poll_interval: 1
     # reliable: true    
@@ -63,11 +69,3 @@ test:
 
 production:
     adapter: stomp
-    reliable: true
-    # properties below are all defaults for this adapter
-    # login: ""
-    # passcode: ""
-    # host: localhost
-    # port: 61613
-    # reliable: true
-    # reconnectDelay: 5

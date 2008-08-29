@@ -128,15 +128,27 @@ module ActiveMessaging
 
         # called after a message is successfully received and processed
         def received message, headers={}
-          message.transaction[:qm].commit(message.transaction[:tid]) 
-          Thread.current[::ReliableMsg::Client::THREAD_CURRENT_TX] = nil
+          begin
+            message.transaction[:qm].commit(message.transaction[:tid]) 
+          rescue Object=>ex
+            puts "received failed: #{ex.message}"
+          ensure
+            Thread.current[::ReliableMsg::Client::THREAD_CURRENT_TX] = nil
+          end
+          
         end
         
         # called after a message is successfully received and processed
         def unreceive message, headers={}
-          message.transaction[:qm].abort(message.transaction[:tid])
-          Thread.current[::ReliableMsg::Client::THREAD_CURRENT_TX] = nil
+          begin
+            message.transaction[:qm].abort(message.transaction[:tid])
+          rescue Object=>ex
+            puts "unreceive failed: #{ex.message}"
+          ensure
+            Thread.current[::ReliableMsg::Client::THREAD_CURRENT_TX] = nil
+          end
         end
+
       end
       
       class Subscription
