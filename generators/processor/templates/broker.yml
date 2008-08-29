@@ -20,10 +20,10 @@ development:
     # NEW! enable stomp retry logic
     #  will resend errored out messages to be retried when on_error throws ActiveMessaging::AbortMessageException
     #
-    #  - Max number of times to retry an aborted message, for 0, will not retry (default)
-    # maxRetry:0
+    # Max number of times to retry an aborted message, for 0, will not retry (default)
+    # retryMax: 0
     #
-    #  - If error still occurs after maxRetry, send message to specified dead letter queue
+    # If error still occurs after retryMax, send message to specified dead letter queue
     # deadLetterQueue: '/queue/activemessaging/deadletter'
 
     ###################################
