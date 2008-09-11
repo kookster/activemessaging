@@ -18,6 +18,9 @@ module ActiveMessaging
 
       THREAD_OLD_TXS = :a13g_reliable_msg_old_txs
 
+      QUEUE_PARAMS = [:expires,:delivery,:priority,:max_deliveries,:drb_uri,:tx_timeout,:connect_count]
+      TOPIC_PARAMS = [:expires,:drb_uri,:tx_timeout,:connect_count]
+
       class Connection
         include ActiveMessaging::Adapter
 
@@ -79,7 +82,8 @@ module ActiveMessaging
           dd = /^\/(queue|topic)\/(.*)$/.match(destination_name)
           rm_class = dd[1].titleize
           message_headers.delete("id")
-          rm_dest = "ReliableMsg::#{rm_class}".constantize.new(dd[2], message_headers)
+          dest_headers = message_headers.reject {|k,v| rm_class == 'Queue' ? !QUEUE_PARAMS.include?(k) : !TOPIC_PARAMS.include?(k)}
+          rm_dest = "ReliableMsg::#{rm_class}".constantize.new(dd[2], dest_headers)
           destinations[destination_name] = rm_dest
         end
 

@@ -17,6 +17,7 @@ module ActiveMessaging
   end
 
   def ActiveMessaging.logger
+    @@logger = RAILS_DEFAULT_LOGGER if !defined?(@@logger) && (defined?(RAILS_DEFAULT_LOGGER) && !RAILS_DEFAULT_LOGGER.nil?)
     @@logger = ActiveRecord::Base.logger unless defined?(@@logger)
     @@logger = Logger.new(STDOUT) unless defined?(@@logger)
     @@logger
