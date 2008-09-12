@@ -59,7 +59,7 @@ EOM
 
   
   def test_send_and_receive
-    @connection.subscribe @d
+    @connection.subscribe @d, :visibility_timeout=>100
     @connection.send @d, @message
 
     @connection.test_headers = {:destination=>@d}
