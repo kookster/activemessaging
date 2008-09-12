@@ -97,7 +97,7 @@ module ActiveMessaging
             queue = queues[queue_name]
             subscription = @subscriptions[queue_name]
             unless queue.nil?
-              messages = retrieve_messsages queue, 1, subscription.headers
+              messages = retrieve_messsages queue, 1, subscription.headers[:visibility_timeout]
               return messages[0] unless (messages.nil? or messages.empty? or messages[0].nil?)
             end
           end
@@ -176,10 +176,10 @@ module ActiveMessaging
         def retrieve_messsages queue, num_messages=1, timeout=nil
           validate_queue queue
           validate_number_of_messages num_messages
-          validate_timeout timeout if (timeout && !timeout.empty?)
+          validate_timeout timeout if timeout
 
           params = {'MaxNumberOfMessages'=>num_messages.to_s}
-          params['VisibilityTimeout'] = timeout.to_s if (timeout && !timeout.empty?)
+          params['VisibilityTimeout'] = timeout.to_s if timeout
 
           response = make_request('ReceiveMessage', "#{queue.queue_url}", params)
           response.nodes("//Message").collect{ |n| Message.from_element n, response, queue } unless response.nil?
