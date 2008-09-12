@@ -15,7 +15,8 @@ module ActiveMessaging
         register :asqs
 
         QUEUE_NAME_LENGTH = 1..80
-        MESSAGE_SIZE = 1..(256 * 1024)
+        # MESSAGE_SIZE = 1..(256 * 1024)
+        MESSAGE_SIZE = 1..(8 * 1024)
         VISIBILITY_TIMEOUT = 0..(24 * 60 * 60)
         NUMBER_OF_MESSAGES = 1..255
         GET_QUEUE_ATTRIBUTES = ['All', 'ApproximateNumberOfMessages', 'VisibilityTimeout']
@@ -61,9 +62,9 @@ module ActiveMessaging
           # look at the existing queues, create any that are missing
           queue = get_or_create_queue queue_name
           if @subscriptions.has_key? queue.name
-            @subscriptions[queue.name] += 1
+            @subscriptions[queue.name].add
           else
-            @subscriptions[queue.name] = 1 
+            @subscriptions[queue.name] = Subscription.new(queue.name, message_headers)
           end
         end
 
@@ -71,8 +72,8 @@ module ActiveMessaging
         # for sqs, attempt delete the queues, won't work if not empty, that's ok
         def unsubscribe queue_name, message_headers={}
           if @subscriptions[queue_name]
-            @subscriptions[queue_name] -= 1
-            @subscriptions.delete(queue_name) if @subscriptions[queue_name] <= 0
+            @subscriptions[queue_name].remove
+            @subscriptions.delete(queue_name) if @subscriptions[queue_name].count <= 0
           end
         end
 
@@ -94,8 +95,9 @@ module ActiveMessaging
             sleep poll_interval if (@current_subscription == start)
             queue_name = @subscriptions.keys.sort[@current_subscription]
             queue = queues[queue_name]
+            subscription = @subscriptions[queue_name]
             unless queue.nil?
-              messages = retrieve_messsages queue, 1
+              messages = retrieve_messsages queue, 1, subscription.headers
               return messages[0] unless (messages.nil? or messages.empty? or messages[0].nil?)
             end
           end
@@ -174,10 +176,10 @@ module ActiveMessaging
         def retrieve_messsages queue, num_messages=1, timeout=nil
           validate_queue queue
           validate_number_of_messages num_messages
-          validate_timeout timeout if timeout
+          validate_timeout timeout if (timeout && !timeout.empty?)
 
           params = {'MaxNumberOfMessages'=>num_messages.to_s}
-          params['VisibilityTimeout'] = timeout.to_s if timeout
+          params['VisibilityTimeout'] = timeout.to_s if (timeout && !timeout.empty?)
 
           response = make_request('ReceiveMessage', "#{queue.queue_url}", params)
           response.nodes("//Message").collect{ |n| Message.from_element n, response, queue } unless response.nil?
@@ -347,6 +349,23 @@ module ActiveMessaging
         end
       end
 
+      class Subscription
+        attr_accessor :name, :headers, :count
+        
+        def initialize(destination, headers={}, count=1)
+          @destination, @headers, @count = destination, headers, count
+        end
+        
+        def add
+          @count += 1
+        end
+
+        def remove
+          @count -= 1
+        end
+
+      end
+
       class Queue
         attr_accessor :name, :pathinfo, :domain, :visibility_timeout
 
@@ -380,6 +399,7 @@ module ActiveMessaging
           @headers, @id, @body, @md5_of_body, @receipt_handle, @response, @queue, @command =  headers, id, body, md5_of_body, receipt_handle, response, queue, command
           headers['destination'] = queue.name
         end
+
       
         def to_s
           "<AmazonSQS::Message id='#{id}' body='#{body}' headers='#{headers.inspect}' command='#{command}' response='#{response}'>"
