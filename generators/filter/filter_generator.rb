@@ -1,4 +1,4 @@
-class FilterGenerator < Rails::Generator::NamedBase
+class FilterGenerator < RubiGen::Base
   def manifest
     record do |m|
       path = 'app/processors'

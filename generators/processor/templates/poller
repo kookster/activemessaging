@@ -1,9 +1,11 @@
 #!/usr/bin/env ruby
 require 'rubygems'
 require 'daemons'
+require 'activesupport'
+require 'activemessaging'
 
 APP_ROOT = File.expand_path(File.dirname(__FILE__) + '/..')
-script_file = File.join(File.expand_path(APP_ROOT),'vendor','plugins','activemessaging','poller.rb')
+script_file = File.join(File.dirname(__FILE__)+'/../lib/poller.rb')
 tmp_dir = File.join(File.expand_path(APP_ROOT), 'tmp')
 
 options = {

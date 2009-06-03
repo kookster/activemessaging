@@ -1,4 +1,6 @@
 require 'yaml'
+require 'ostruct'
+require 'erb'
 
 module ActiveMessaging
 
@@ -186,11 +188,15 @@ module ActiveMessaging
       end
 
       def prepare_application
-        Dispatcher.prepare_application_for_dispatch
+        if defined? Rails
+          Dispatcher.prepare_application_for_dispatch
+        end
       end
 
       def reset_application
-        Dispatcher.reset_application_after_dispatch
+        if defined? Rails
+          Dispatcher.reset_application_after_dispatch
+        end
       end
       
       def dispatch(message)
@@ -357,11 +363,11 @@ module ActiveMessaging
       end
       
       def load_connection_configuration(label='default')
-        @broker_yml = YAML::load(ERB.new(IO.read(File.join(RAILS_ROOT, 'config', 'broker.yml'))).result) if @broker_yml.nil?
+        @broker_yml = YAML::load(ERB.new(IO.read(File.join(APP_ROOT, 'config', 'broker.yml'))).result) if @broker_yml.nil?
         if label == 'default'
-          config = @broker_yml[RAILS_ENV].symbolize_keys
+          config = @broker_yml[APP_ENV].symbolize_keys
         else
-          config = @broker_yml[RAILS_ENV][label].symbolize_keys
+          config = @broker_yml[APP_ENV][label].symbolize_keys
         end
         config[:adapter] = config[:adapter].to_sym if config[:adapter]
         config[:adapter] ||= :stomp
@@ -387,6 +393,8 @@ module ActiveMessaging
     def subscribe
       ActiveMessaging.logger.error "=> Subscribing to #{destination.value} (processed by #{processor_class})"
       Gateway.connection(@destination.broker_name).subscribe(@destination.value, subscribe_headers) 
+      # TODO (uwe): Not sure why this needs to happen here
+      @processor = @processor_class.new
     end
 
     def unsubscribe

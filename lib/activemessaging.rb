@@ -1,6 +1,7 @@
 module ActiveMessaging
-
-  VERSION = "0.5" #maybe this should be higher, but I'll let others judge :)
+  VERSION  = "0.5" #maybe this should be higher, but I'll let others judge :)
+  APP_ROOT = ENV['APP_ROOT'] || ENV['RAILS_ROOT'] || ((defined? RAILS_ROOT) && RAILS_ROOT) || File.dirname($0)
+  APP_ENV  = ENV['APP_ENV']  || ENV['RAILS_ENV']  || 'development'
 
   # Used to indicate that the processing for a thread shoud complete
   class StopProcessingException < Interrupt #:nodoc:
@@ -35,7 +36,7 @@ module ActiveMessaging
     require 'activemessaging/trace_filter'
 
     # load all under the adapters dir 
-    Dir[RAILS_ROOT + '/vendor/plugins/activemessaging/lib/activemessaging/adapters/*.rb'].each{|a| 
+    Dir[APP_ROOT + '/vendor/plugins/activemessaging/lib/activemessaging/adapters/*.rb'].each{|a| 
       begin
         adapter_name = File.basename(a, ".rb")
         require 'activemessaging/adapters/' + adapter_name
@@ -46,7 +47,7 @@ module ActiveMessaging
   end
 
   def self.load_config
-    path = File.expand_path("#{RAILS_ROOT}/config/messaging.rb")
+    path = File.expand_path("#{APP_ROOT}/config/messaging.rb")
     begin
       load path
     rescue MissingSourceFile
@@ -58,12 +59,12 @@ module ActiveMessaging
 
   def self.load_processors(first=true)
     #Load the parent processor.rb, then all child processor classes
-    load RAILS_ROOT + '/vendor/plugins/activemessaging/lib/activemessaging/message_sender.rb' unless defined?(ActiveMessaging::MessageSender)
-    load RAILS_ROOT + '/vendor/plugins/activemessaging/lib/activemessaging/processor.rb' unless defined?(ActiveMessaging::Processor)
-    load RAILS_ROOT + '/vendor/plugins/activemessaging/lib/activemessaging/filter.rb' unless defined?(ActiveMessaging::Filter)
-    logger.debug "ActiveMessaging: Loading #{RAILS_ROOT + '/app/processors/application.rb'}" if first
-    load RAILS_ROOT + '/app/processors/application.rb' if File.exist?("#{RAILS_ROOT}/app/processors/application.rb")
-    Dir[RAILS_ROOT + '/app/processors/*.rb'].each do |f|
+    load APP_ROOT + '/vendor/plugins/activemessaging/lib/activemessaging/message_sender.rb' unless defined?(ActiveMessaging::MessageSender)
+    load APP_ROOT + '/vendor/plugins/activemessaging/lib/activemessaging/processor.rb' unless defined?(ActiveMessaging::Processor)
+    load APP_ROOT + '/vendor/plugins/activemessaging/lib/activemessaging/filter.rb' unless defined?(ActiveMessaging::Filter)
+    logger.debug "ActiveMessaging: Loading #{APP_ROOT + '/app/processors/application.rb'}" if first
+    load APP_ROOT + '/app/processors/application.rb' if File.exist?("#{APP_ROOT}/app/processors/application.rb")
+    Dir[APP_ROOT + '/app/processors/*.rb'].each do |f|
       unless f.match(/\/application.rb/)
         logger.debug "ActiveMessaging: Loading #{f}" if first
         load f
@@ -115,12 +116,18 @@ end
 ActiveMessaging.load_activemessaging
 
 
-# reload these on each request - leveraging Dispatcher semantics for consistency
-require 'dispatcher' unless defined?(::Dispatcher)
 
-# add processors and config to on_prepare if supported (rails 1.2+)
-if ::Dispatcher.respond_to? :to_prepare
-  ::Dispatcher.to_prepare :activemessaging do
-    ActiveMessaging.reload_activemessaging
+# reload these on each request - leveraging Dispatcher semantics for consistency
+begin
+  require 'dispatcher' unless defined?(::Dispatcher)
+  
+  # add processors and config to on_prepare if supported (rails 1.2+)
+  if ::Dispatcher.respond_to? :to_prepare
+    ::Dispatcher.to_prepare :activemessaging do
+      ActiveMessaging.reload_activemessaging
+    end
   end
+rescue MissingSourceFile => e
+  logger.info e.message
+  logger.info "Rails not available."
 end
