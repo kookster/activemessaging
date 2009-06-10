@@ -1,19 +1,23 @@
-ENV['APP_ENV'] = 'test'
-APP_ENV = 'test'
-if defined? Rails
+rails_environtment_file = File.expand_path(File.dirname(__FILE__) + "/../../../../config/environment")
+
+if File.exists? rails_environtment_file
+  require rails_environment_file
   APP_ROOT = RAILS_ROOT
-  require File.expand_path(File.dirname(__FILE__) + "/../../../../config/environment")
 else
-  APP_ROOT = File.dirname(__FILE__) + '/app'
+  ENV['APP_ENV'] = 'test'
+  APP_ENV = 'test'
+  
+  $: << File.expand_path(File.dirname(__FILE__) + '/../lib')
   require 'rubygems'
   require 'activesupport'
-  require File.dirname(__FILE__) + '/../lib/activemessaging/message_sender'
-  require File.dirname(__FILE__) + '/../lib/activemessaging/processor'
-  require File.dirname(__FILE__) + '/../lib/activemessaging/gateway'
+  require 'activemessaging/message_sender'
+  require 'activemessaging/processor'
+  require 'activemessaging/gateway'
+  require 'activemessaging/adapters/test'
+  APP_ROOT = File.dirname(__FILE__) + '/app'
 end
-
+  
 # load other libraries
 require 'test/unit'
 
 require File.dirname(__FILE__) + '/../lib/activemessaging/test_helper'
-require 'activemessaging/adapters/test'
