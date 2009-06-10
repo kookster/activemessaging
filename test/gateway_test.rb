@@ -47,7 +47,7 @@ class GatewayTest < Test::Unit::TestCase
     include ActiveMessaging::MessageSender
     #subscribes_to :testqueue
     def on_message(message)
-      puts "TestRetryProcessor - about to raise exception"
+      #puts "TestRetryProcessor - about to raise exception"
       raise ActiveMessaging::AbortMessageException.new("Cause a retry!")
     end
   end

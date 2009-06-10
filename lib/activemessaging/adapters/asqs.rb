@@ -4,6 +4,7 @@ require 'openssl'
 require 'base64'
 require 'cgi'
 require 'time'
+require 'activemessaging/adapter'
 
 module ActiveMessaging
   module Adapters

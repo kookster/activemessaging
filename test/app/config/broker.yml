@@ -1,0 +1,4 @@
+# Yaml config file for testing ActiveMessaging
+test:
+    adapter: test
+    reliable: false

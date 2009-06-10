@@ -3,9 +3,21 @@ require 'test/unit'
 
 
 module ActiveMessaging #:nodoc:
+  @@logger = nil
 
   # def self.reload_activemessaging
   # end
+
+  def self.logger
+    @@logger ||= MockLogger.new
+    @@logger
+  end
+  
+  class AbortMessageException < Exception #:nodoc:
+  end
+
+  class StopFilterException < Exception #:nodoc:
+  end
 
   class Gateway
     
@@ -170,5 +182,13 @@ module ActiveMessaging #:nodoc:
       assert !destination.nil? && !destination.messages.empty?, error_message
     end
   end
+  
+  class MockLogger
+    def error(*args) ; end
+    def warn(*args) ; end
+    def info(*args) ; end
+    def debug(*args) ; end
+  end
+
 end
 

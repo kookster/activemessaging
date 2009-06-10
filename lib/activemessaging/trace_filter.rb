@@ -9,7 +9,7 @@ class TraceFilter< ActiveMessaging::Filter
   def process message, routing
     
     unless ( routing[:destination].name == @queue ) then
-      puts "\nTrace: direction = #{routing[:direction]} publisher=#{routing[:publisher]} queue=#{routing[:destination].name} @queue=#{@queue}\n"
+      ActiveMessaging.logger.debug "Trace: direction = #{routing[:direction]} publisher=#{routing[:publisher]} queue=#{routing[:destination].name} @queue=#{@queue}"
       if routing[:direction].to_sym==:outgoing then
         "trace from outgoing"
         publish @queue, "<sent>"+

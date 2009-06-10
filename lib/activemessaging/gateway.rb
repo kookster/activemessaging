@@ -393,7 +393,7 @@ module ActiveMessaging
     def subscribe
       ActiveMessaging.logger.error "=> Subscribing to #{destination.value} (processed by #{processor_class})"
       Gateway.connection(@destination.broker_name).subscribe(@destination.value, subscribe_headers) 
-      # TODO (uwe): Not sure why this needs to happen here
+      # FIXME (uwe): Not sure why this needs to happen here
       @processor = @processor_class.new
     end
 
