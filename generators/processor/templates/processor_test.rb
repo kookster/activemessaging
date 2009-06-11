@@ -1,5 +1,5 @@
 require File.dirname(__FILE__) + '/../test_helper'
-require File.dirname(__FILE__) + '/../../vendor/plugins/activemessaging/lib/activemessaging/test_helper'
+require 'activemessaging/test_helper'
 require File.dirname(__FILE__) + '/../../app/processors/application'
 
 class <%= class_name %>ProcessorTest < Test::Unit::TestCase
