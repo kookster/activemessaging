@@ -1,6 +1,11 @@
 #
 # contributed by Al-Faisal El-Dajani on 11/04/2009
 #
+# One caveat: beanstalk does not accept the underscore '_' as a legal character in queue names. 
+# So in messaging.rb you'll need to modify your queue names to use something other than the underscore, a dash perhaps.
+# Accepting the underscore as a valid char in queue names is an open issue in beanstalk, and should be fixed in a future version.
+#
+
 require 'beanstalk-client'
 
 module ActiveMessaging
