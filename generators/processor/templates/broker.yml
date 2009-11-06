@@ -27,13 +27,14 @@ development:
     # If error still occurs after retryMax, send message to specified dead letter queue
     # deadLetterQueue: '/queue/activemessaging/deadletter'
 
+    ################################
+    # Beanstalk Adapter Properties #
+    ################################
+    # adapter: beanstalk
+    # host: localhost
 
-    ###################################
-    # Websphere MQ Adapter Properties #
-    ###################################
-    # adapter: wmq
-    # q_mgr_name: ""
-    # poll_interval: .1
+    ## properties below are all defaults for this adapter
+    # port: 11300
 
 
     #################################
@@ -61,8 +62,18 @@ development:
 
     ## properties below are all defaults for this adapter
     # poll_interval: 1
-    # reliable: true    
+    # reliable: true
 
+
+    ###################################
+    # Websphere MQ Adapter Properties #
+    ###################################
+    # adapter: wmq
+    # q_mgr_name: ""
+    # poll_interval: .1
+
+
+    
 test:
     adapter: test
     reliable: false
