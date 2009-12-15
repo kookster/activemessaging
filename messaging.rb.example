@@ -1,5 +1,0 @@
-
-ActiveMessaging::Dispatcher.define do |s|
-  s.queue :orders, '/queue/Orders'
-  s.queue :completed, '/queue/CompletedItems'
-end

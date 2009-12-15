@@ -70,6 +70,7 @@ module ActiveMessaging
               elsif retry_count >= @retryMax && @deadLetterQueue
                 # send the 'poison pill' message to the dead letter queue
                 retry_headers['a13g-original-destination'] = retry_headers.delete('destination')
+                retry_headers['persistent'] = true
                 retry_headers.delete('message-id')
                 self.send @deadLetterQueue, message.body, retry_headers
               end
