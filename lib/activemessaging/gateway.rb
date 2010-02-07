@@ -189,13 +189,14 @@ module ActiveMessaging
 
       def prepare_application
         if defined? Rails
-          Dispatcher.prepare_application_for_dispatch
+          # Dispatcher.prepare_application_for_dispatch
+          ActiveRecord::Base.verify_active_connections!
         end
       end
 
       def reset_application
         if defined? Rails
-          Dispatcher.reset_application_after_dispatch
+          # Dispatcher.reset_application_after_dispatch
         end
       end
       
