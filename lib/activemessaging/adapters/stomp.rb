@@ -18,15 +18,14 @@ module ActiveMessaging
           cfg[:passcode] ||= ""
           cfg[:host] ||= "localhost"
           cfg[:port] ||= "61613"
-          cfg[:reliable] ||= TRUE
+          cfg[:reliable]  = cfg[:reliable].nil? ? TRUE : cfg[:reliable].nil?
           cfg[:reconnectDelay] ||= 5
           cfg[:clientId] ||= nil
-          
-          if cfg[:clientId]
-            super(cfg[:login],cfg[:passcode],cfg[:host],cfg[:port].to_i,cfg[:reliable],cfg[:reconnectDelay],cfg[:clientId])
-          else
-            super(cfg[:login],cfg[:passcode],cfg[:host],cfg[:port].to_i,cfg[:reliable],cfg[:reconnectDelay])
-          end
+
+          connect_headers = {}
+          connect_headers['client-id'] = cfg[:clientId] if cfg[:clientId]
+
+          super(cfg[:login],cfg[:passcode],cfg[:hos          
 
         end
         

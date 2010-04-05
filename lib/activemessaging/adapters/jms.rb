@@ -25,7 +25,7 @@ module ActiveMessaging
             #this initialize is probably activemq specific. There might be a more generic
             #way of getting this without resorting to jndi lookup.
             eval <<-end_eval
-              @connection_factory = Java::#{cfg[:connection_factory]}.new(@login, @password, @url)
+              @connection_factory = Java::#{cfg[:connection_factory]}.new(@login, @passcode, @url)
             end_eval
           elsif cfg.has_key? :jndi
             @connection_factory = javax.naming.InitialContext.new().lookup(cfg[:jndi])

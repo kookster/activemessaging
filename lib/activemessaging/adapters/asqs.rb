@@ -1,10 +1,12 @@
 require 'rubygems'
 require 'net/http'
+require 'net/https'
 require 'openssl'
 require 'base64'
 require 'cgi'
 require 'time'
 require 'activemessaging/adapter'
+require 'uri'
 
 module ActiveMessaging
   module Adapters
@@ -16,7 +18,6 @@ module ActiveMessaging
         register :asqs
 
         QUEUE_NAME_LENGTH = 1..80
-        # MESSAGE_SIZE = 1..(256 * 1024)
         MESSAGE_SIZE = 1..(8 * 1024)
         VISIBILITY_TIMEOUT = 0..(24 * 60 * 60)
         NUMBER_OF_MESSAGES = 1..255
@@ -238,6 +239,15 @@ module ActiveMessaging
           return Net::HTTP.start(h, p){ |http| http.request(r) }
         end
 
+        def http_request h, p, r
+          http = Net::HTTP.new(h, p)
+          http.use_ssl = true if "https" == @protocol
+          # Don't carp about SSL cert verification
+          http.verify_mode = OpenSSL::SSL::VERIFY_NONE
+          return http.request(r)
+        end
+
+
         def check_errors(response)
           raise "http response was nil" if (response.nil?)
           raise response.errors if (response && response.errors?)
@@ -369,11 +379,6 @@ module ActiveMessaging
 
       class Queue
         attr_accessor :name, :pathinfo, :domain, :visibility_timeout
-
-        def self.from_url url
-          return Queue.new($2,$1) if (url =~ /^http:\/\/(.+)\/([-a-zA-Z0-9_]+)$/)
-          raise "Bad Queue URL: #{url}"
-        end
 
         def queue_url
           "#{pathinfo}/#{name}"
