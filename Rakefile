@@ -25,10 +25,10 @@ begin
   Jeweler::Tasks.new do |gemspec|
     
     # basic
-    gemspec.name = "kookster-activemessaging"
+    gemspec.name = "activemessaging"
     gemspec.summary = "Official activemessaging gem, now hosted on github.com/kookster. (kookster prefix temporary)"
     gemspec.description = "ActiveMessaging is an attempt to bring the simplicity and elegance of rails development to the world of messaging. Messaging, (or event-driven architecture) is widely used for enterprise integration, with frameworks such as Java's JMS, and products such as ActiveMQ, Tibco, IBM MQSeries, etc."
-    gemspec.email = "andrew@beginsinwonder.com"
+    gemspec.email = "activemessaging-discuss@googlegroups.com"
     gemspec.homepage = "http://github.com/kookster/activemessaging"
     gemspec.authors = ["Jon Tirsen", "Andrew Kuklewicz", "Olle Jonsson", "Sylvain Perez", "Cliff Moon", 'Uwe Kubosch']
 

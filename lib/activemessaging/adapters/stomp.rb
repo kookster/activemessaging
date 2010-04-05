@@ -25,7 +25,7 @@ module ActiveMessaging
           connect_headers = {}
           connect_headers['client-id'] = cfg[:clientId] if cfg[:clientId]
 
-          super(cfg[:login],cfg[:passcode],cfg[:hos          
+          super(cfg[:login],cfg[:passcode],cfg[:host],cfg[:port].to_i,cfg[:reliable],cfg[:reconnectDelay], connect_headers)
 
         end
         
@@ -67,7 +67,7 @@ module ActiveMessaging
                 self.send retry_headers['destination'], message.body, retry_headers
 
               elsif retry_count >= @retryMax && @deadLetterQueue
-                # send the 'poison pill' message to the dead letter queue
+                # send the 'poison pill' message to the dead letter queue - make it persistent by default
                 retry_headers['a13g-original-destination'] = retry_headers.delete('destination')
                 retry_headers['persistent'] = true
                 retry_headers.delete('message-id')

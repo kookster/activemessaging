@@ -56,6 +56,7 @@ module ActiveMessaging
 
         def disconnect
           #it's an http request - there is no disconnect - ha!
+          return true
         end
 
         # queue_name string, headers hash
@@ -247,7 +248,6 @@ module ActiveMessaging
           return http.request(r)
         end
 
-
         def check_errors(response)
           raise "http response was nil" if (response.nil?)
           raise response.errors if (response && response.errors?)
@@ -310,7 +310,6 @@ module ActiveMessaging
         def validate_number_of_messages nom
           raise "Number of messages, #{nom}, must be between #{NUMBER_OF_MESSAGES.min} and #{NUMBER_OF_MESSAGES.max}." unless NUMBER_OF_MESSAGES.include?(nom)
         end
-
       end
 
       class SQSResponse
@@ -374,11 +373,17 @@ module ActiveMessaging
         def remove
           @count -= 1
         end
-
       end
 
       class Queue
         attr_accessor :name, :pathinfo, :domain, :visibility_timeout
+
+        def self.from_url url
+          u = URI.parse(url)
+          name = u.path.gsub(/\//, "")
+          domain  = u.host
+          return Queue.new(name,domain) 
+        end
 
         def queue_url
           "#{pathinfo}/#{name}"
@@ -406,7 +411,6 @@ module ActiveMessaging
           headers['destination'] = queue.name
         end
 
-      
         def to_s
           "<AmazonSQS::Message id='#{id}' body='#{body}' headers='#{headers.inspect}' command='#{command}' response='#{response}'>"
         end
