@@ -9,14 +9,15 @@ Gem::Specification.new do |s|
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Jon Tirsen", "Andrew Kuklewicz", "Olle Jonsson", "Sylvain Perez", "Cliff Moon", "Uwe Kubosch"]
-  s.date = %q{2010-04-05}
+  s.date = %q{2010-04-08}
   s.description = %q{ActiveMessaging is an attempt to bring the simplicity and elegance of rails development to the world of messaging. Messaging, (or event-driven architecture) is widely used for enterprise integration, with frameworks such as Java's JMS, and products such as ActiveMQ, Tibco, IBM MQSeries, etc.}
   s.email = %q{activemessaging-discuss@googlegroups.com}
   s.extra_rdoc_files = [
     "README"
   ]
   s.files = [
-    "Rakefile",
+    "README",
+     "Rakefile",
      "VERSION",
      "activemessaging.gemspec",
      "generators/a13g_test_harness/a13g_test_harness_generator.rb",
@@ -55,6 +56,7 @@ Gem::Specification.new do |s|
      "lib/activemessaging/adapters/stomp.rb",
      "lib/activemessaging/adapters/test.rb",
      "lib/activemessaging/adapters/wmq.rb",
+     "lib/activemessaging/base_message.rb",
      "lib/activemessaging/filter.rb",
      "lib/activemessaging/gateway.rb",
      "lib/activemessaging/message_sender.rb",
@@ -73,6 +75,7 @@ Gem::Specification.new do |s|
      "test/gateway_test.rb",
      "test/jms_test.rb",
      "test/reliable_msg_test.rb",
+     "test/stomp_test.rb",
      "test/test_helper.rb",
      "test/tracer_test.rb"
   ]
@@ -89,6 +92,7 @@ Gem::Specification.new do |s|
      "test/gateway_test.rb",
      "test/jms_test.rb",
      "test/reliable_msg_test.rb",
+     "test/stomp_test.rb",
      "test/test_helper.rb",
      "test/tracer_test.rb"
   ]
