@@ -84,8 +84,8 @@ class StompTest < Test::Unit::TestCase
   def test_subscribe
     @connection.subscribe @d, {}
     assert_equal "SUBSCRIBE", @connection.stomp_connection.socket.sent_messages[0]
-    assert_equal "content-length:0", @connection.stomp_connection.socket.sent_messages[1]
-    assert_equal "destination:#{@d}", @connection.stomp_connection.socket.sent_messages[2]
+    # assert_equal "content-length:0", @connection.stomp_connection.socket.sent_messages[1]
+    assert_equal "destination:#{@d}", @connection.stomp_connection.socket.sent_messages[1]
     assert_equal 1, @connection.stomp_connection.subscriptions.count
     assert_equal({'content-length'=>'0', :destination=>@d}, @connection.stomp_connection.subscriptions[@d])
   end
@@ -95,16 +95,16 @@ class StompTest < Test::Unit::TestCase
     @connection.stomp_connection.socket.sent_messages = []
     @connection.unsubscribe @d, {}
     assert_equal "UNSUBSCRIBE", @connection.stomp_connection.socket.sent_messages[0]
-    assert_equal "content-length:0", @connection.stomp_connection.socket.sent_messages[1]
-    assert_equal "destination:#{@d}", @connection.stomp_connection.socket.sent_messages[2]
+    # assert_equal "content-length:0", @connection.stomp_connection.socket.sent_messages[1]
+    assert_equal "destination:#{@d}", @connection.stomp_connection.socket.sent_messages[1]
     assert_equal 0, @connection.stomp_connection.subscriptions.count
   end
   
   def test_send
     @connection.send(@d, @message, {})
     assert_equal 'SEND', @connection.stomp_connection.socket.sent_messages[0]
-    assert_equal "content-length:#{@message.length}", @connection.stomp_connection.socket.sent_messages[1]
-    assert_equal "destination:#{@d}", @connection.stomp_connection.socket.sent_messages[2]
+    # assert_equal "content-length:#{@message.length}", @connection.stomp_connection.socket.sent_messages[1]
+    assert_equal "destination:#{@d}", @connection.stomp_connection.socket.sent_messages[1]
     assert_equal @message, @connection.stomp_connection.socket.sent_messages[5]
   end
 
