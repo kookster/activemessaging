@@ -1,11 +1,10 @@
-require 'activemessaging/adapter'
+require 'activemessaging/adapters/base'
 
 module ActiveMessaging
   module Adapters
     module Test
     
-      class Connection
-        include ActiveMessaging::Adapter
+      class Connection < ActiveMessaging::Adapters::BaseConnection
         register :test
         
         attr_accessor :config, :subscriptions, :destinations, :connected, :received_messages, :unreceived_messages
@@ -42,7 +41,7 @@ module ActiveMessaging
         def send destination_name, message_body, message_headers={}
           open_destination destination_name
           destination = find_destination destination_name
-          destination.send Message.new(message_headers, nil, message_body, nil, destination)
+          destination.send Message.new(message_body, nil, message_headers, destination_name)
         end
         
         def receive
@@ -51,15 +50,6 @@ module ActiveMessaging
           end
           destination.receive unless destination.nil?
         end
-        
-        # should not be 2 defs for receive, this isn't java, ya know? -Andrew
-        # def receive destination_name, headers={}
-        #   subscribe destination_name, headers
-        #   destination = find_destination destination_name
-        #   message = destination.receive
-        #   unsubscribe destination_name, headers
-        #   message
-        # end
         
         def received message, headers={}
           @received_messages << message
@@ -71,8 +61,9 @@ module ActiveMessaging
         
         #test helper methods
         def find_message destination_name, body
+          
           all_messages.find do |m|
-            m.headers['destination'] == destination_name && if body.is_a?(Regexp)
+            m.destination == destination_name && if body.is_a?(Regexp)
               m.body =~ body
             else
               m.body == body.to_s
@@ -138,18 +129,9 @@ module ActiveMessaging
         end
       end
       
-      class Message
-        attr_accessor :headers, :body, :command
-        
-        def initialize headers, id, body, response, destination, command='MESSAGE'
-          @headers, @body, @command =  headers, body, command
-          headers['destination'] = destination.name
-        end
-      
-        def to_s
-          "<Test::Message body='#{body}' headers='#{headers.inspect}' command='#{command}' >"
-        end
+      class Message < ActiveMessaging::BaseMessage
       end
+      
     end
   end
 end

@@ -216,39 +216,33 @@ module ActiveMessaging
       end
 
       def _dispatch(message)
-        case message.command
-        when 'ERROR'
-          ActiveMessaging.logger.error('Error from messaging infrastructure: ' + message.headers['message'])
-        when 'MESSAGE'
-          abort = false
-          processed = false
+        abort = false
+        processed = false
 
-          subscriptions.each do |key, subscription| 
-            if subscription.matches?(message) then
-              processed = true
-              routing = {
-                :receiver=>subscription.processor_class, 
-                :destination=>subscription.destination,
-                :direction => :incoming
-              }
-              begin
-                execute_filter_chain(:incoming, message, routing) do |m|
-                  result = subscription.processor_class.new.process!(m)
-                end
-              rescue ActiveMessaging::AbortMessageException
-                abort_message subscription, message
-                abort = true
-                return
-              ensure
-                acknowledge_message subscription, message unless abort
+        subscriptions.each do |key, subscription| 
+          if message.matches_subscription?(subscription) then
+            processed = true
+            routing = {
+              :receiver=>subscription.processor_class, 
+              :destination=>subscription.destination,
+              :direction => :incoming
+            }
+            begin
+              execute_filter_chain(:incoming, message, routing) do |m|
+                result = subscription.processor_class.new.process!(m)
               end
+            rescue ActiveMessaging::AbortMessageException
+              abort_message subscription, message
+              abort = true
+              return
+            ensure
+              acknowledge_message subscription, message unless abort
             end
           end
-
-          ActiveMessaging.logger.error("No-one responded to #{message}") unless processed
-        else 
-          ActiveMessaging.logger.error('Unknown message command: ' + message.inspect)
         end
+
+        ActiveMessaging.logger.error("No-one responded to #{message}") unless processed
+
       end
 
       # acknowledge_message is called when the message has been processed w/o error by at least one processor
@@ -269,7 +263,7 @@ module ActiveMessaging
 
       def destination destination_name, destination, publish_headers={}, broker='default'
         raise "You already defined #{destination_name} to #{named_destinations[destination_name].value}" if named_destinations.has_key?(destination_name)
-        named_destinations[destination_name] = Destination.new destination_name, destination, publish_headers, broker
+        named_destinations[destination_name] = Destination.new(destination_name, destination, publish_headers, broker)
       end
       
       alias queue destination
@@ -386,16 +380,10 @@ module ActiveMessaging
       @destination, @processor_class, @subscribe_headers = destination, processor_class, subscribe_headers
       subscribe_headers['id'] = processor_class.name.underscore unless subscribe_headers.key? 'id'
     end
-    
-    def matches?(message)
-      message.headers['destination'].to_s == @destination.value.to_s
-    end
-    
+
     def subscribe
       ActiveMessaging.logger.error "=> Subscribing to #{destination.value} (processed by #{processor_class})"
       Gateway.connection(@destination.broker_name).subscribe(@destination.value, subscribe_headers) 
-      # FIXME (uwe): Not sure why this needs to happen here
-      @processor = @processor_class.new
     end
 
     def unsubscribe
@@ -407,15 +395,23 @@ module ActiveMessaging
   class Destination
     DEFAULT_PUBLISH_HEADERS = { :persistent=>true }
 
-    attr_accessor :name, :value, :publish_headers, :broker_name
+    attr_accessor :name, :value, :publish_headers, :broker_name, :wildcard
 
     def initialize(name, value, publish_headers, broker_name)
       @name, @value, @publish_headers, @broker_name = name, value, publish_headers, broker_name
       @publish_headers.reverse_merge! DEFAULT_PUBLISH_HEADERS
+      @wildcard = wildcard_match_exp_for(value) if (value =~ /\*/)
     end
     
     def to_s
-      "#{broker_name}: #{name} => '#{value}'"
+      "<destination: #{broker_name} :#{name}=>'#{value}'>"
+    end
+    
+    private
+    
+    def wildcard_match_exp_for(destination)
+      exp = destination.to_s.gsub(/[.]/, '\.').gsub(/[*]/, '[^.*]+').gsub(/([>].*$)/, '.*') + '$'
+      Regexp.new(exp)
     end
 
   end

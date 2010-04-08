@@ -87,19 +87,19 @@ class FilterTest < Test::Unit::TestCase
   end
 
   def test_filters_use_include
-    ActiveMessaging::Gateway.dispatch ActiveMessaging::TestMessage.new('/queue/test.queue')
+    ActiveMessaging::Gateway.dispatch ActiveMessaging::TestMessage.new('body', {}, '/queue/test.queue')
     MockFilter.assert_was_called(:include_only)
     MockFilter.assert_was_not_called(:exclude_only)
   end
 
   def test_filters_use_exclude
-    ActiveMessaging::Gateway.dispatch ActiveMessaging::TestMessage.new('/queue/test.queue')
+    ActiveMessaging::Gateway.dispatch ActiveMessaging::TestMessage.new('body', {}, '/queue/test.queue')
     MockFilter.assert_was_called(:include_except)
     MockFilter.assert_was_not_called(:exclude_except)
   end
 
   def test_filters_and_processor_gets_called_on_receive
-    ActiveMessaging::Gateway.dispatch ActiveMessaging::TestMessage.new('/queue/test.queue')
+    ActiveMessaging::Gateway.dispatch ActiveMessaging::TestMessage.new('body', {}, '/queue/test.queue')
     MockFilter.assert_was_called(:bidirectional)
     MockFilter.assert_was_called(:incoming)
     MockFilter.assert_was_not_called(:outgoing)
@@ -122,7 +122,7 @@ class FilterTest < Test::Unit::TestCase
   end
   
   def test_sets_routing_details_on_receive
-    ActiveMessaging::Gateway.dispatch ActiveMessaging::TestMessage.new('/queue/test.queue')
+    ActiveMessaging::Gateway.dispatch ActiveMessaging::TestMessage.new('body', {}, '/queue/test.queue')
   
     MockFilter.assert_was_called(:incoming)
     MockFilter.assert_routing(:incoming, {:destination=>ActiveMessaging::Gateway.find_queue(:testqueue), :receiver=>FilterTest::TestProcessor, :direction=>:incoming})

@@ -7,17 +7,19 @@
 #
 
 require 'beanstalk-client'
+require 'activemessaging/adapters/base'
 
 module ActiveMessaging
   module Adapters
     module Beanstalk
       
-      class Connection
-        include ActiveMessaging::Adapter
+      class Connection < ActiveMessaging::Adapters::BaseConnection
         register :beanstalk
         
+        attr_accessor :connection, :host, :port
+        
         def initialize cfg
-          @host = cfg[:host]
+          @host = cfg[:host] || 'localhost'
           @port = cfg[:port] || 11300
           
           @connection = ::Beanstalk::Pool.new("#{@host}:#{@port}")
@@ -59,19 +61,18 @@ module ActiveMessaging
         
       end
       
-      class Message
-        attr_accessor :headers, :body, :command, :beanstalk_job
+      class Message < ActiveMessaging::BaseMessage
+        attr_accessor :beanstalk_job
         
         def initialize beanstalk_job
-          @beanstalk_job = beanstalk_job
-          @headers = {
+          bsh = {
             'destination' => beanstalk_job.stats['tube'],
             'priority'    => beanstalk_job.pri,
             'delay'       => beanstalk_job.delay,
             'ttr'         => beanstalk_job.ttr
           }
-          @body = beanstalk_job.body
-          @command = 'MESSAGE'
+          super(beanstalk_job.body, beanstalk_job.id, bsh, beanstalk_job.stats['tube'])
+          @beanstalk_job = beanstalk_job
         end
         
         def delete
@@ -80,10 +81,6 @@ module ActiveMessaging
         
         def release
           @beanstalk_job.release
-        end
-        
-        def to_s
-          "<Beanstalk::Message body='#{body}' headers='#{headers.inspect}' command='#{command}' >"
         end
       end
     end

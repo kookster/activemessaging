@@ -7,32 +7,22 @@ module ActiveMessaging #:nodoc:
 end
 
 class TestProcessor < ActiveMessaging::Processor
-  #subscribes_to :hello_world
-
   def on_message message
-    #do nothing
   end
 end
 
 class TestSender < ActiveMessaging::Processor
-  #publishes_to :hello_world
-
 end
 
-class FakeMessage
-  def command
-    'MESSAGE'
-  end
-  def headers
-    {'destination'=>'/queue/helloWorld'}
-  end
-  def body
-    "Ni hao ma?"
+class FakeMessage < ActiveMessaging::BaseMessage
+  def initialize
+    super("Ni hao ma?", 1, {'destination'=>'/queue/helloWorld'}, '/queue/helloWorld')
   end
 end
 
 class TracerTest < Test::Unit::TestCase
   include ActiveMessaging::TestHelper
+
   def setup
     ActiveMessaging::Gateway.define do |s|
       s.queue :hello_world, '/queue/helloWorld'
@@ -54,16 +44,14 @@ class TracerTest < Test::Unit::TestCase
 
     sender = TestSender.new
     sender.publish :hello_world, message
-
+    
     assert_message :trace, "<sent><from>TestSender</from><queue>hello_world</queue><message>#{message}</message></sent>"
     assert_message :hello_world, message
   end
 
   def test_should_trace_received_messages
-    message = "Ni hao ma?"
-
     ActiveMessaging::Gateway.dispatch FakeMessage.new
 
-    assert_message :trace, "<received><by>TestProcessor</by><queue>hello_world</queue><message>#{message}</message></received>"
+    assert_message :trace, "<received><by>TestProcessor</by><queue>hello_world</queue><message>Ni hao ma?</message></received>"
   end
 end

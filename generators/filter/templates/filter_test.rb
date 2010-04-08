@@ -20,7 +20,7 @@ class <%= class_name %>FilterTest < Test::Unit::TestCase
   end  
 
   def test_<%= file_name %>_filter
-    @message = ActiveMessaging::TestMessage.new(@destination.value, {'message-id'=>'test-message-id-header'}, 'message body')
+    @message = ActiveMessaging::TestMessage.new('message body', {'message-id'=>'test-message-id-header'}, @destination.value )
     @routing = {:direction=>:incoming, :destination=>@destination}
     @filter.process(@message, @routing)
   end

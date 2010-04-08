@@ -15,7 +15,7 @@ class AsqsTest < Test::Unit::TestCase
     end
   end
   
-  ActiveMessaging::Adapters::AmazonSQS::Connection.class_eval do
+  ::ActiveMessaging::Adapters::AmazonSqs::Connection.class_eval do
     attr_accessor :test_response, :test_headers
 
     DEFAULT_RESPONSE = <<EOM 
@@ -40,7 +40,7 @@ EOM
   
 
   def setup
-    @connection = ActiveMessaging::Adapters::AmazonSQS::Connection.new(:reliable=>false, :access_key_id=>'access_key_id', :secret_access_key=>'secret_access_key', :reconnectDelay=>1)
+    @connection = ActiveMessaging::Adapters::AmazonSqs::Connection.new(:reliable=>false, :access_key_id=>'access_key_id', :secret_access_key=>'secret_access_key', :reconnectDelay=>1)
     @d = "asqs"
     @message = "mary had a little lamb"
   end

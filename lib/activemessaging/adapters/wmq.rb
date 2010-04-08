@@ -19,17 +19,15 @@
 #
 require 'wmq/wmq'
 
+require 'activemessaging/adapters/base'
+
 module ActiveMessaging
   module Adapters
     module Adapter
 
       # Connection class needed by a13g
-      class Connection
-        include ActiveMessaging::Adapter
+      class Connection < ActiveMessaging::Adapters::BaseConnection
         register :wmq
-
-        # Needed by a13g but never used within this adapter
-        attr_accessor :reliable
 
         # Generic init method needed by a13g
         def initialize(cfg)
@@ -147,22 +145,15 @@ module ActiveMessaging
 
       # Message class needed by a13g (based on the same Message class in Stomp adapter)
       # Contains a reference to the MQ message object ;-) !
-      class Message
-        # Accessors needed by a13g
-        attr_accessor :headers, :body, :command, :wmq_message
+      class Message < ActiveMessaging::BaseMessage
+
+        attr_accessor :wmq_message
         
         def initialize(wmq_message, q_name)
+          super(wmq_message.data, wmq_message.descriptor[:msg_id], {'destination' => q_name}, q_name)
           @wmq_message = wmq_message
-
-          # Needed by a13g
-          @headers = {'destination' => q_name}
-          @body = wmq_message.data
-          @command = 'MESSAGE'
         end
 
-        def to_s
-          "<Adapter::Message headers=#{@headers.inspect} body='#{@body}' command='#{@command}' wmq_message=#{@wmq_message}>"
-        end
       end
       
       private

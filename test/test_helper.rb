@@ -9,10 +9,11 @@ else
   
   $: << File.expand_path(File.dirname(__FILE__) + '/../lib')
   require 'rubygems'
-  require 'activesupport'
+  require 'active_support'
   require 'activemessaging/message_sender'
   require 'activemessaging/processor'
   require 'activemessaging/gateway'
+  require 'activemessaging/filter'
   require 'activemessaging/adapters/test'
   APP_ROOT = File.dirname(__FILE__) + '/app'
 end

@@ -1,5 +1,4 @@
 module ActiveMessaging
-  VERSION  = "0.6.1"
   APP_ROOT = ENV['APP_ROOT'] || ENV['RAILS_ROOT'] || ((defined? RAILS_ROOT) && RAILS_ROOT) || File.dirname($0)
   APP_ENV  = ENV['APP_ENV']  || ENV['RAILS_ENV']  || 'development'
   ROOT     = File.expand_path(File.join(File.dirname(__FILE__), '..'))

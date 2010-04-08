@@ -5,16 +5,15 @@ require 'openssl'
 require 'base64'
 require 'cgi'
 require 'time'
-require 'activemessaging/adapter'
 require 'uri'
+
+require 'activemessaging/adapters/base'
 
 module ActiveMessaging
   module Adapters
-    module AmazonSQS
+    module AmazonSqs
 
-      class Connection
-        include ActiveMessaging::Adapter
-
+      class Connection < ActiveMessaging::Adapters::BaseConnection
         register :asqs
 
         QUEUE_NAME_LENGTH = 1..80
@@ -25,33 +24,33 @@ module ActiveMessaging
         SET_QUEUE_ATTRIBUTES = ['VisibilityTimeout']
 
         #configurable params
-        attr_accessor :reliable, :reconnectDelay, :access_key_id, :secret_access_key, :aws_version, :content_type, :host, :port, :poll_interval, :cache_queue_list
-        
+        attr_accessor :reconnectDelay, :access_key_id, :secret_access_key, :aws_version, :content_type, :host, :port, :poll_interval, :cache_queue_list
+      
         #generic init method needed by a13g
         def initialize cfg
-            raise "Must specify a access_key_id" if (cfg[:access_key_id].nil? || cfg[:access_key_id].empty?)
-            raise "Must specify a secret_access_key" if (cfg[:secret_access_key].nil? || cfg[:secret_access_key].empty?)
+          raise "Must specify a access_key_id" if (cfg[:access_key_id].nil? || cfg[:access_key_id].empty?)
+          raise "Must specify a secret_access_key" if (cfg[:secret_access_key].nil? || cfg[:secret_access_key].empty?)
 
-            @access_key_id=cfg[:access_key_id]
-            @secret_access_key=cfg[:secret_access_key]
-            @request_expires = cfg[:requestExpires]         || 10
-            @request_retry_count = cfg[:requestRetryCount]  || 5
-            @aws_version = cfg[:aws_version]                || '2008-01-01'
-            @content_type = cfg[:content_type]              || 'text/plain'
-            @host = cfg[:host]                              || 'queue.amazonaws.com'
-            @port = cfg[:port]                              || 80
-            @protocol = cfg[:protocol]                      || 'http'
-            @poll_interval = cfg[:poll_interval]            || 1
-            @reconnect_delay = cfg[:reconnectDelay]         || 5
-            @aws_url="#{@protocol}://#{@host}"
+          @access_key_id=cfg[:access_key_id]
+          @secret_access_key=cfg[:secret_access_key]
+          @request_expires = cfg[:requestExpires]         || 10
+          @request_retry_count = cfg[:requestRetryCount]  || 5
+          @aws_version = cfg[:aws_version]                || '2008-01-01'
+          @content_type = cfg[:content_type]              || 'text/plain'
+          @host = cfg[:host]                              || 'queue.amazonaws.com'
+          @port = cfg[:port]                              || 80
+          @protocol = cfg[:protocol]                      || 'http'
+          @poll_interval = cfg[:poll_interval]            || 1
+          @reconnect_delay = cfg[:reconnectDelay]         || 5
+          @aws_url="#{@protocol}://#{@host}"
 
-            @cache_queue_list = cfg[:cache_queue_list].nil? ? true : cfg[:cache_queue_list]
-            @reliable =         cfg[:reliable].nil?         ? true : cfg[:reliable]
-            
-            #initialize the subscriptions and queues
-            @subscriptions = {}
-            @current_subscription = 0
-            queues
+          @cache_queue_list = cfg[:cache_queue_list].nil? ? true : cfg[:cache_queue_list]
+          @reliable =         cfg[:reliable].nil?         ? true : cfg[:reliable]
+        
+          #initialize the subscriptions and queues
+          @subscriptions = {}
+          @current_subscription = 0
+          queues
         end
 
         def disconnect
@@ -110,18 +109,18 @@ module ActiveMessaging
           begin
             delete_message message
           rescue Object=>exception
-            logger.error "Exception in ActiveMessaging::Adapters::AmazonSQS::Connection.received() logged and ignored: "
+            logger.error "Exception in ActiveMessaging::Adapters::AmazonSWS::Connection.received() logged and ignored: "
             logger.error exception
           end
         end
 
+        # do nothing; by not deleting the message will eventually become visible again
         def unreceive message, headers={}
-          # do nothing; by not deleting the message will eventually become visible again
           return true
         end
-        
+      
         protected
-        
+      
         def create_queue(name)
           validate_new_queue name
       		response = make_request('CreateQueue', nil, {'QueueName'=>name})
@@ -139,7 +138,7 @@ module ActiveMessaging
       		response = make_request('ListQueues', nil, params)
           response.nil? ? [] : response.nodes("//QueueUrl").collect{ |n| add_queue(n.text) }
         end
-        
+      
         def get_queue_attributes(queue, attribute='All')
           validate_get_queue_attribute(attribute)
           params = {'AttributeName'=>attribute}
@@ -187,7 +186,7 @@ module ActiveMessaging
           response = make_request('ReceiveMessage', "#{queue.queue_url}", params)
           response.nodes("//Message").collect{ |n| Message.from_element n, response, queue } unless response.nil?
         end
-        
+      
         def delete_message message
           response = make_request('DeleteMessage', "#{message.queue.queue_url}", {'ReceiptHandle'=>message.receipt_handle})
         end
@@ -195,7 +194,7 @@ module ActiveMessaging
       	def make_request(action, url=nil, params = {})
           # puts "make_request a=#{action} u=#{url} p=#{params}"
       	  url ||= @aws_url
-      	  
+    	  
       		# Add Actions
       		params['Action'] = action
       		params['Version'] = @aws_version
@@ -253,9 +252,9 @@ module ActiveMessaging
           raise response.errors if (response && response.errors?)
           response
         end
-        
+      
         private
-        
+      
         # internal data structure methods
         def add_queue(url)
           q = Queue.from_url url
@@ -314,14 +313,14 @@ module ActiveMessaging
 
       class SQSResponse
         attr_accessor :headers, :doc, :http_response
-        
+      
         def initialize response
           # puts "response.body = #{response.body}"
           @http_response = response
           @headers = response.to_hash()
           @doc = REXML::Document.new(response.body)
         end
-      
+    
         def message_type
           return doc ? doc.root.name : ''
         end
@@ -344,16 +343,16 @@ module ActiveMessaging
 
           return msg
         end
-      
+    
         def get_text(xpath,default='')
           e = REXML::XPath.first( doc, xpath)
           e.nil? ? default : e.text
         end
-      
+    
         def each_node(xp)
           REXML::XPath.each(doc.root, xp) {|n| yield n}
         end
-      
+    
         def nodes(xp)
           doc.elements.to_a(xp)
         end
@@ -361,11 +360,11 @@ module ActiveMessaging
 
       class Subscription
         attr_accessor :name, :headers, :count
-        
+      
         def initialize(destination, headers={}, count=1)
           @destination, @headers, @count = destination, headers, count
         end
-        
+      
         def add
           @count += 1
         end
@@ -399,20 +398,20 @@ module ActiveMessaging
       end
 
       # based on stomp message, has pointer to the SQSResponseObject
-      class Message
-        attr_accessor :headers, :id, :body, :command, :response, :queue, :md5_of_body, :receipt_handle
-        
-        def self.from_element e, response, queue
-          Message.new(response.headers, e.elements['MessageId'].text, e.elements['Body'].text, e.elements['MD5OfBody'].text, e.elements['ReceiptHandle'].text, response, queue)
-        end
+      class Message < ActiveMessaging::BaseMessage
+        attr_accessor :response, :queue, :md5_of_body, :receipt_handle
       
-        def initialize headers, id, body, md5_of_body, receipt_handle, response, queue, command='MESSAGE'
-          @headers, @id, @body, @md5_of_body, @receipt_handle, @response, @queue, @command =  headers, id, body, md5_of_body, receipt_handle, response, queue, command
-          headers['destination'] = queue.name
+        def self.from_element e, response, queue
+          Message.new(e.elements['Body'].text, response.headers, e.elements['MessageId'].text, e.elements['MD5OfBody'].text, e.elements['ReceiptHandle'].text, response, queue)
+        end
+    
+        def initialize body, headers, id, md5_of_body, receipt_handle, response, queue
+          super(body, id, headers, queue.name)
+          @md5_of_body, @receipt_handle, @response, @queue =  md5_of_body, receipt_handle, response, queue
         end
 
         def to_s
-          "<AmazonSQS::Message id='#{id}' body='#{body}' headers='#{headers.inspect}' command='#{command}' response='#{response}'>"
+          "<AmazonSQS::Message id='#{id}' body='#{body}' headers='#{headers.inspect}' response='#{response}'>"
         end
       end
    

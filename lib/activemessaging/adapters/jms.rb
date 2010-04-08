@@ -164,18 +164,18 @@ module ActiveMessaging
         def condition_message message
           message.class.class_eval { 
             alias_method :body, :text unless method_defined? :body
-            
-            def command
-              "MESSAGE"
-            end
-            
+
             def headers
               destination.to_s =~ %r{(queue|topic)://(.*)}
               puts "/#{$1}/#{$2}"
               {'destination' => "/#{$1}/#{$2}"}
             end
             
-          } unless message.nil? || message.respond_to?(:command)
+            def matches_subscription?(subscription)
+              self.headers['destination'].to_s == subscription.value.to_s
+            end
+            
+          } unless message.nil? || message.respond_to?(:headers)
           message
         end
         

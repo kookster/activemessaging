@@ -1,4 +1,5 @@
 require File.dirname(__FILE__) + '/test_helper'
+require 'activemessaging/adapters/reliable_msg'
 
 loaded = true
 begin
@@ -13,7 +14,7 @@ class ReliableMsgTest < Test::Unit::TestCase
   def setup
     @qm = ReliableMsg::QueueManager.new
     @qm.start
-    @connection = ActiveMessaging::Adapters::ReliableMsg::Connection.new(:reliable=>false, :poll_interval=>2)
+    @connection = ActiveMessaging::Adapters::ReliableMsgConnection.new(:reliable=>false, :poll_interval=>2)
     @d = "/queue/reliable.msg.test}."
     @message = "mary had a little lamb"
     @message2 = "whose fleece was white as snow"

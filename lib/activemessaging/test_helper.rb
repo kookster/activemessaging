@@ -48,18 +48,13 @@ module ActiveMessaging #:nodoc:
     
   end
   
-  class TestMessage
-    attr_reader :headers
-    attr_accessor :body
+  class TestMessage < ActiveMessaging::BaseMessage
 
-    def initialize(destination, headers = {}, body = "")
-      @headers, @body = headers, body
+    def initialize(body="", headers={}, destination="")
+      super(body, nil, headers, destination)
       @headers['destination'] = destination
     end
-    
-    def command
-      "MESSAGE"
-    end
+
   end
 
   module TestHelper
