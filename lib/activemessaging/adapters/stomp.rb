@@ -52,7 +52,12 @@ module ActiveMessaging
         # destination_name string, body string, headers hash
         # send a single message to a destination
         def send destination_name, message_body, message_headers={}
-          @stomp_connection.send(destination_name, message_body, message_headers)
+          # send has been deprecated in latest stomp gem (as it should be)
+          if @stomp_connection.respond_to?(:publish)
+            @stomp_connection.publish(destination_name, message_body, message_headers)
+          else
+            @stomp_connection.send(destination_name, message_body, message_headers)
+          end
         end
 
         # receive a single message from any of the subscribed destinations
