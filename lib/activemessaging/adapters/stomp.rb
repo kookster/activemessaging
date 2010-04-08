@@ -52,12 +52,7 @@ module ActiveMessaging
         # destination_name string, body string, headers hash
         # send a single message to a destination
         def send destination_name, message_body, message_headers={}
-          # send has been deprecated in latest stomp gem (as it should be)
-          if @stomp_connection.respond_to?(:publish)
-            @stomp_connection.publish(destination_name, message_body, message_headers)
-          else
-            @stomp_connection.send(destination_name, message_body, message_headers)
-          end
+          stomp_publish(destination_name, message_body, message_headers)
         end
 
         # receive a single message from any of the subscribed destinations
@@ -73,6 +68,15 @@ module ActiveMessaging
           if (headers[:ack] === 'client')
             ack_headers = message.headers.has_key?(:transaction) ? { :transaction=>message.headers[:transaction]} : {}
             @stomp_connection.ack(message.headers['message-id'], ack_headers)
+          end
+        end
+        
+        # send has been deprecated in latest stomp gem (as it should be)
+        def stomp_publish(destination_name="", message_body="", message_headers={})
+          if @stomp_connection.respond_to?(:publish)
+            @stomp_connection.publish(destination_name, message_body, message_headers)
+          else
+            @stomp_connection.send(destination_name, message_body, message_headers)
           end
         end
 
@@ -104,14 +108,15 @@ module ActiveMessaging
                 retry_headers['a13g-retry-count'] = retry_count + 1
 
                 # send the updated message to retry in the same transaction
-                @stomp_connection.send retry_destination, message.body, retry_headers
+                self.stomp_publish(retry_destination, message.body, retry_headers)
 
               elsif retry_count >= @retryMax && @deadLetterQueue
                 # send the 'poison pill' message to the dead letter queue - make it persistent by default
                 retry_headers['a13g-original-destination'] = retry_headers.delete('destination')
                 retry_headers['persistent'] = true
                 retry_headers.delete('message-id')
-                @stomp_connection.send(@deadLetterQueue, message.body, retry_headers)
+
+                self.stomp_publish(@deadLetterQueue, message.body, retry_headers)
               end
 
             end
