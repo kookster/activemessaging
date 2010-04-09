@@ -19,7 +19,6 @@ task :rdoc do
   RDoc::RDoc.new.document(%w(--line-numbers --inline-source --title ActiveMessaging README lib))
 end
 
-
 begin
   require 'jeweler'
   Jeweler::Tasks.new do |gemspec|
@@ -36,6 +35,7 @@ begin
     gemspec.add_dependency('activesupport', '>= 1.0.0')
     
   end
+  Jeweler::GemcutterTasks.new
 rescue LoadError
   puts "Jeweler not available. Install it with: gem install jeweler"
 end
