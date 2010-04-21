@@ -1,11 +1,10 @@
-require 'activemessaging/adapters/base'
-
 require 'carrot'
 require 'digest/md5'
 require 'bert'
 
 # make sure ActiveMessaging::Processor is already loaded so we actually override it!
 require 'activemessaging/processor'
+require 'activemessaging/adapters/base'
 
 module ActiveMessaging
   class Processor
@@ -26,8 +25,6 @@ module ActiveMessaging
         register :amqp
 
         class InvalidExchangeType < ArgumentError; end
-        
-        @@mutex = Mutex.new
         
         def initialize config = {}
           @connect_options = {
@@ -51,7 +48,7 @@ module ActiveMessaging
           end
 
           @queue_config = {
-            :durable     => @auto_generated_queue ? false : config[:queue_durability] || true,
+            :durable     => @auto_generated_queue ? false : config[:queue_durable] || true,
             :auto_delete => @auto_generated_queue ? true : config[:queue_auto_delete] || false,
             :exclusive   => @auto_generated_queue ? true : config[:queue_exclusive]   || true
           }
@@ -183,5 +180,4 @@ module ActiveMessaging
     end
   end
 end
-
 
