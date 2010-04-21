@@ -128,9 +128,9 @@ module ActiveMessaging
         
         def exchange type, name, *args
           type = type.to_sym rescue nil
-		  unless [:topic, :fanout, :direct].include? type
+          unless [:topic, :fanout, :direct].include? type
             raise InvalidExchangeType, "The carrot library does not support an exchange type of '#{type.inspect}'"
-		  end
+          end
 
           name ||= "amq.#{type}"
           puts "Exchange [#{type}::#{name}]: #{args.inspect}" if @debug > 3
@@ -146,7 +146,7 @@ module ActiveMessaging
         def client
           return @client unless @client.nil?
           puts "Client [amqp]: #{@connect_options.inspect}" if @debug > 0
-		  @client ||= Carrot.new(@connect_options)
+          @client ||= Carrot.new(@connect_options)
         end
 
       end
@@ -176,8 +176,8 @@ module ActiveMessaging
           BERT.encode @data
         end
         
-        def self.decode data, queue_name = nil
-          AmqpMessage.new(BERT.decode(data), queue_name)
+        def self.decode data
+          AmqpMessage.new BERT.decode(data)
         end
       end
     end
