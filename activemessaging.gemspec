@@ -48,6 +48,7 @@ Gem::Specification.new do |s|
      "init.rb",
      "lib/activemessaging.rb",
      "lib/activemessaging/adapter.rb",
+     "lib/activemessaging/adapters/amqp.rb",
      "lib/activemessaging/adapters/asqs.rb",
      "lib/activemessaging/adapters/base.rb",
      "lib/activemessaging/adapters/beanstalk.rb",
