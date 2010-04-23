@@ -24,6 +24,8 @@ module ActiveMessaging
         include ActiveMessaging::Adapter
         register :amqp
 
+        SERVER_RETRY_MAX_ATTEMPTS = 10
+        
         class InvalidExchangeType < ArgumentError; end
         
         def initialize config = {}
@@ -83,9 +85,16 @@ module ActiveMessaging
           if @debug > 0
             puts "Sending the following message: "; pp message
           end
-          exchange(*exchange_info(headers)).publish(message.encode, :key => headers[:routing_key])
+          begin
+            exchange(*exchange_info(headers)).publish(message.encode, :key => headers[:routing_key])
+          rescue ::Carrot::AMQP::Server::ServerDown
+            retry_attempts = retry_attempts.nil? ? 1 : retry_attempts + 1
+            sleep(retry_attempts * 0.25)
+            retry unless retry_attempts >= SERVER_RETRY_MAX_ATTEMPTS
+            raise e
+          end
         end
-        
+
         def subscribe queue_name, headers = {}, subId = nil
           if @debug > 1
             puts "Begin Subscribe Request:"
