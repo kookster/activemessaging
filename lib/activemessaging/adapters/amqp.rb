@@ -6,6 +6,8 @@ require 'bert'
 require 'activemessaging/processor'
 require 'activemessaging/adapters/base'
 
+require 'emissary/message'
+
 module ActiveMessaging
   class Processor
     def self.subscribes_to destination_name, headers={}
@@ -70,7 +72,7 @@ module ActiveMessaging
           while true 
             message = queue.pop(:ack => true)
             unless message.nil?
-              message = AmqpMessage.decode(message) unless message.nil?
+              message = AmqpMessage.decode(message).stamp_received! unless message.nil?
               message.headers[:delivery_tag] = queue.delivery_tag
               puts "RECEIVE: #{message.inspect}" if @debug 
               return message
@@ -79,14 +81,16 @@ module ActiveMessaging
           end
         end
         
-        def send queue_name, body, headers = {}
+        def send queue_name, data, headers = {}
           headers[:routing_key] ||= queue_name
-          message = AmqpMessage.new({:headers => headers, :body => body}, queue_name)
+          message = AmqpMessage.new({:headers => headers, :data => data}, queue_name)
+          
           if @debug > 0
             puts "Sending the following message: "; pp message
           end
+          
           begin
-            exchange(*exchange_info(headers)).publish(message.encode, :key => headers[:routing_key])
+            exchange(*exchange_info(headers)).publish(message.stamp_sent!.encode, :key => headers[:routing_key])
           rescue ::Carrot::AMQP::Server::ServerDown
             retry_attempts = retry_attempts.nil? ? 1 : retry_attempts + 1
             sleep(retry_attempts * 0.25)
@@ -157,35 +161,43 @@ module ActiveMessaging
 
       end
       
-      class AmqpMessage
+      class AmqpMessage < Emissary::Message
         attr_reader :command
+        attr_accessor :destination, :delivery_tag
         
         def initialize(data, queue_name = nil)
-          @data = {
-            :body    => data[:body] || {},
-            :headers => data[:headers] || {}
-          }
+          data[:data] = data.delete(:body) unless (data[:data] && !data[:body])
+
+          super(data)
           
-          headers['destination'] ||= queue_name || headers[:routing_key]
+          @delivery_tag ||= (data[:headers][:delivery_tag] rescue nil)
+          @destination  ||= (data[:headers][:destination] rescue nil) || queue_name || routing_key
+          
           @command = "MESSAGE"
         end
         
-        def body
-          @data[:body]
-        end
+        alias :body :data
         
         def headers
-          @data[:headers]
+          super.merge({
+            :destination  => @destination,
+            :delivery_tag => @delivery_tag
+          })
         end
         
-        def encode
-          BERT.encode @data
-        end
-        
-        def self.decode data
-          AmqpMessage.new BERT.decode(data)
+        def matches_subscription?(subscription)
+          # use routing key first, otherwise, use the defined destination value
+          destination = subscription.subscribe_headers[:routing_key] || subscription.destination.value.to_s
+          
+          if destination.match(/(\#|\*)/)
+            dest_regex = Regex.new(destination.gsub('.*', '[.][^.]+').gsub(/\.\#.*/, '[.].*'))
+            !!(headers[:destination].to_s =~ dest_regex)
+          else
+            !!(headers[:destination].to_s == destination)
+          end
         end
       end
+      
     end
   end
 end
