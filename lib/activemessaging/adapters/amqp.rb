@@ -73,7 +73,7 @@ module ActiveMessaging
             message = queue.pop(:ack => true)
             unless message.nil?
               message = AmqpMessage.decode(message).stamp_received! unless message.nil?
-              message.headers[:delivery_tag] = queue.delivery_tag
+              message.delivery_tag = queue.delivery_tag
               puts "RECEIVE: #{message.inspect}" if @debug 
               return message
             end
@@ -180,7 +180,7 @@ module ActiveMessaging
         
         def headers
           super.merge({
-            :destination  => @destination,
+            :destination  => routing_key,
             :delivery_tag => @delivery_tag
           })
         end
@@ -190,7 +190,7 @@ module ActiveMessaging
           destination = subscription.subscribe_headers[:routing_key] || subscription.destination.value.to_s
           
           if destination.match(/(\#|\*)/)
-            dest_regex = Regex.new(destination.gsub('.*', '[.][^.]+').gsub(/\.\#.*/, '[.].*'))
+            dest_regex = ::Regexp.new(destination.gsub('.*', '[.][^.]+').gsub(/\.\#.*/, '[.].*'))
             !!(headers[:destination].to_s =~ dest_regex)
           else
             !!(headers[:destination].to_s == destination)
