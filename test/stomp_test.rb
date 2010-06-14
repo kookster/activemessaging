@@ -69,11 +69,14 @@ class StompTest < Test::Unit::TestCase
           :port=> "61613",
           :reliable=>FALSE,
           :reconnectDelay=> 5,
-          :clientId=> 'cid' }
+          :clientId=> 'cid',
+          :deadLetterQueuePrefix=>"DLQ."}
 
     @connection = ActiveMessaging::Adapters::Stomp::Connection.new(i)
     assert_equal 4, @connection.retryMax
     assert_equal '/queue/dlq', @connection.deadLetterQueue
+    assert_equal "DLQ.", @connection.deadLetterQueuePrefix
+    assert_equal true, @connection.supports_dlq?
   end
 
   def test_disconnect
@@ -123,7 +126,28 @@ class StompTest < Test::Unit::TestCase
     @connection = ActiveMessaging::Adapters::Stomp::Connection.new({:retryMax=>4, :deadLetterQueue=>'/queue/dlq'})
     @connection.stomp_connection.receive = @message
     m = @connection.receive
+    m.headers["a13g-retry-count"] = 5
     @connection.unreceive m, {:ack=>'client'}
+  end
+
+  def test_unreceive_with_dlq_prefix
+    @connection = ActiveMessaging::Adapters::Stomp::Connection.new({:retryMax=>4, :deadLetterQueuePrefix=>'DLQ.'})
+    @connection.stomp_connection.receive = @message
+    m = @connection.receive
+    m.headers["a13g-retry-count"] = 5
+    @connection.unreceive m, {:ack=>'client', :destination=>"/queue/myqueue"}
+  end
+
+  def test_add_dlq_prefix
+    @connection = ActiveMessaging::Adapters::Stomp::Connection.new({:deadLetterQueuePrefix=>'DLQ.'})
+    dlq = @connection.add_dlq_prefix("/queue/myqueue")
+    assert_equal "/queue/DLQ.myqueue", dlq
+    dlq = @connection.add_dlq_prefix("/queue/something/myqueue")
+    assert_equal "/queue/something/DLQ.myqueue", dlq
+    dlq = @connection.add_dlq_prefix("/topic/myqueue")
+    assert_equal "/topic/DLQ.myqueue", dlq
+    dlq = @connection.add_dlq_prefix("myqueue")
+    assert_equal "DLQ.myqueue", dlq
   end
 
 end

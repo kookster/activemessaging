@@ -9,11 +9,12 @@ module ActiveMessaging
       class Connection < ActiveMessaging::Adapters::BaseConnection
         register :stomp
 
-        attr_accessor :stomp_connection, :retryMax, :deadLetterQueue, :configuration
+        attr_accessor :stomp_connection, :retryMax, :deadLetterQueue, :configuration, :deadLetterQueuePrefix
 
         def initialize(cfg)
           @retryMax = cfg[:retryMax] || 0
           @deadLetterQueue = cfg[:deadLetterQueue] || nil
+          @deadLetterQueuePrefix = cfg[:deadLetterQueuePrefix] || nil
         
           cfg[:login] ||= ""
           cfg[:passcode] ||= ""
@@ -31,7 +32,22 @@ module ActiveMessaging
           connect_headers['client-id'] = cfg[:clientId] if cfg[:clientId]
           @stomp_connection = ::Stomp::Connection.new(cfg[:login],cfg[:passcode],cfg[:host],cfg[:port].to_i,cfg[:reliable],cfg[:reconnectDelay], connect_headers)
         end
-      
+        
+        # Checks if the connection supports dead letter queues
+        def supports_dlq?
+          !@deadLetterQueue.nil? || !@deadLetterQueuePrefix.nil?
+        end
+
+        # add the dead letter queue prefix to the destination
+        def add_dlq_prefix(destination)
+            if (ri = destination.rindex("/"))
+                destination.clone.insert(ri + 1, @deadLetterQueuePrefix)
+            else
+                @deadLetterQueuePrefix + destination
+            end
+
+        end
+
         # called to cleanly get rid of connection
         def disconnect
           @stomp_connection.disconnect
@@ -94,7 +110,9 @@ module ActiveMessaging
               retry_headers.delete('content-length')
               retry_headers.delete('content-type')
               
-              retry_destination = retry_headers.delete('destination')
+              #retry_destination = retry_headers.delete('destination')
+              retry_destination = headers[:destination]
+              retry_destination = retry_headers.delete('destination') unless retry_destination
             
               if retry_count < @retryMax
                 # now send the message back to the destination
@@ -110,13 +128,19 @@ module ActiveMessaging
                 # send the updated message to retry in the same transaction
                 self.stomp_publish(retry_destination, message.body, retry_headers)
 
-              elsif retry_count >= @retryMax && @deadLetterQueue
+              elsif retry_count >= @retryMax && supports_dlq?
                 # send the 'poison pill' message to the dead letter queue - make it persistent by default
-                retry_headers['a13g-original-destination'] = retry_headers.delete('destination')
+                retry_headers['a13g-original-destination'] = retry_destination #retry_headers.delete('destination')
                 retry_headers['persistent'] = true
                 retry_headers.delete('message-id')
-
-                self.stomp_publish(@deadLetterQueue, message.body, retry_headers)
+                
+                # If the prefix option is set then put the prefix after the /queue/ or /topic/
+                if (@deadLetterQueuePrefix)
+                    dlq = add_dlq_prefix(retry_destination)
+                else
+                    dlq = @deadLetterQueue
+                end
+                self.stomp_publish(dlq, message.body, retry_headers)
               end
 
             end
