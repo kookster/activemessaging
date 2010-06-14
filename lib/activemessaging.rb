@@ -19,7 +19,7 @@ module ActiveMessaging
 
   def ActiveMessaging.logger
     @@logger = nil unless defined? @@logger
-    @@logger ||= RAILS_DEFAULT_LOGGER if defined? RAILS_DEFAULT_LOGGER
+    @@logger ||= Rails.logger
     @@logger ||= ActiveRecord::Base.logger if defined? ActiveRecord
     @@logger ||= Logger.new(STDOUT)
     @@logger
