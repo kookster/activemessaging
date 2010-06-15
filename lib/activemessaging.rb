@@ -1,6 +1,6 @@
 module ActiveMessaging
-  APP_ROOT = ENV['APP_ROOT'] || ENV['RAILS_ROOT'] || ((defined? RAILS_ROOT) && RAILS_ROOT) || File.dirname($0)
-  APP_ENV  = ENV['APP_ENV']  || ENV['RAILS_ENV']  || 'development'
+  APP_ROOT = ENV['APP_ROOT'] || ((defined? Rails) && Rails.root) || ENV['RAILS_ROOT'] || File.dirname($0)
+  APP_ENV  = ENV['APP_ENV']  || ((defined? Rails) && Rails.env)  || ENV['RAILS_ENV']  || 'development'
   ROOT     = File.expand_path(File.join(File.dirname(__FILE__), '..'))
 
   # Used to indicate that the processing for a thread shoud complete
@@ -19,7 +19,7 @@ module ActiveMessaging
 
   def ActiveMessaging.logger
     @@logger = nil unless defined? @@logger
-    @@logger ||= Rails.logger
+    @@logger ||= Rails.logger if defined? Rails
     @@logger ||= ActiveRecord::Base.logger if defined? ActiveRecord
     @@logger ||= Logger.new(STDOUT)
     @@logger
@@ -119,12 +119,7 @@ ActiveMessaging.load_activemessaging
 # reload these on each Rails request - leveraging Dispatcher semantics for consistency
 if defined? Rails
   ActiveMessaging.logger.info "Rails available: Adding dispatcher prepare callback."
-  require 'dispatcher' unless defined?(::Dispatcher)
-  
-  # add processors and config to on_prepare if supported (rails 1.2+)
-  if ::Dispatcher.respond_to? :to_prepare
-    ::Dispatcher.to_prepare :activemessaging do
-      ActiveMessaging.reload_activemessaging
-    end
+  ActionDispatch::Callbacks.to_prepare :activemessaging do
+    ActiveMessaging.reload_activemessaging
   end
 end
