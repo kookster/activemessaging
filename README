@@ -22,8 +22,8 @@ Best bet is the google groups mailing list:
 http://groups.google.com/group/activemessaging-discuss
 
 h1. Fork Details
-This is the forked version of activemessaging located at http://github.com/sgulics/activemessaging
+This is a forked version of activemessaging located at http://github.com/sgulics/activemessaging
 
-This fork adds the ability to specifiy a dead letter queue prefix so instead of all messages going to 1 dead letter queue, each message will go to a dead letter queue that is based on the deadLetterQueuePrefix and the originating queue. 
+This fork adds the ability to specify a dead letter queue prefix so instead of all messages going to 1 dead letter queue, each message will go to a dead letter queue that is based on the deadLetterQueuePrefix configuration property and the originating queue. 
 
 For example, if you specific a deadLetterQueuePrefix of "DLQ." in your broker.yml and the originating queue is /queue/myqueue then the dead letter queue will be /queue/DLQ.myqueue
