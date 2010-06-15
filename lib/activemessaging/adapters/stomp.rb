@@ -99,17 +99,31 @@ module ActiveMessaging
         def unreceive message, headers={} 
           retry_count = message.headers['a13g-retry-count'].to_i || 0
           transaction_id = "transaction-#{message.headers['message-id']}-#{retry_count}"
-
+          puts "\n unreceive #{message.inspect}"
+          puts "headers #{headers.inspect}"
           # start a transaction, send the message back to the original destination
           @stomp_connection.begin(transaction_id)
           begin
 
             if @retryMax > 0
               retry_headers = message.headers.stringify_keys
+              puts "retry headers #{retry_headers.inspect}"
               retry_headers['transaction']= transaction_id
-              retry_headers.delete('content-length')
-              retry_headers.delete('content-type')
-              
+              content_type_header = retry_headers.delete('content-type')
+              content_length_header = retry_headers.delete('content-length')
+              # If the content-length header in the original message is nil 
+              # then we need to set the :suppress_content_length option so 
+              # that the stomp client does not set the content-length of the 
+              # retried message. This option will allow ActiveMQ to interpret the 
+              # message as a TextMessage.
+              # This is somewhat of a hack because the setting of the :suppress_content_length 
+              # header is usually done in the messaging.rb and is removed by the time 
+              # the unreceive message is called. So I am making some assumptions here
+              # on whether or not to set the option
+              if content_type_header and content_type_header.include?('text/plain') && content_length_header.nil?
+                  retry_headers[:suppress_content_length] = true
+              end
+                           
               #retry_destination = retry_headers.delete('destination')
               retry_destination = headers[:destination]
               retry_destination = retry_headers.delete('destination') unless retry_destination
