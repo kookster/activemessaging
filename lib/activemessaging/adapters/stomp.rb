@@ -99,15 +99,12 @@ module ActiveMessaging
         def unreceive message, headers={} 
           retry_count = message.headers['a13g-retry-count'].to_i || 0
           transaction_id = "transaction-#{message.headers['message-id']}-#{retry_count}"
-          puts "\n unreceive #{message.inspect}"
-          puts "headers #{headers.inspect}"
           # start a transaction, send the message back to the original destination
           @stomp_connection.begin(transaction_id)
           begin
 
             if @retryMax > 0
               retry_headers = message.headers.stringify_keys
-              puts "retry headers #{retry_headers.inspect}"
               retry_headers['transaction']= transaction_id
               content_type_header = retry_headers.delete('content-type')
               content_length_header = retry_headers.delete('content-length')
