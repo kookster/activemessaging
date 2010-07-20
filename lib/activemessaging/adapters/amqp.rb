@@ -27,6 +27,12 @@ module ActiveMessaging
         register :amqp
 
         SERVER_RETRY_MAX_ATTEMPTS = 10
+
+        DEFAULT_QUEUE_CONFIG = {
+          :durable     => true,
+          :auto_delete => false,
+          :exclusive   => true
+        }
         
         class InvalidExchangeType < ArgumentError; end
         
@@ -43,6 +49,8 @@ module ActiveMessaging
           
           @debug = config[:debug].to_i rescue 0
           
+          Carrot.logging = true unless @debug < 5
+          
           @auto_generated_queue = false
           unless config[:queue_name]
             @queue_name = Digest::MD5.hexdigest Time.now.to_s
@@ -51,11 +59,14 @@ module ActiveMessaging
             @queue_name = config[:queue_name]
           end
 
-          @queue_config = {
-            :durable     => @auto_generated_queue ? false : config[:queue_durable] || true,
-            :auto_delete => @auto_generated_queue ? true : config[:queue_auto_delete] || false,
-            :exclusive   => @auto_generated_queue ? true : config[:queue_exclusive]   || true
-          }
+          @queue_config = DEFAULT_QUEUE_CONFIG
+          unless @auto_generated_queue
+            @queue_config.merge({
+              :durable     => !!config[:queue_durable],
+              :auto_delete => !!config[:queue_auto_delete],
+              :exclusive   => !!config[:queue_exclusive]
+            })
+          end
         end
         
         def received message, headers = {}
