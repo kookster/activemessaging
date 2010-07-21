@@ -41,7 +41,7 @@ module ActiveMessaging
             :user  => config[:user]  || 'guest',
             :pass  => config[:pass]  || 'guest',
             :host  => config[:host]  || 'localhost',
-            :port  => config[:port]  || 5672,
+            :port  => config[:port]  || (config[:ssl] ? 5671 : 5672),
             :vhost => config[:vhost] || nil,
             :ssl   => config[:ssl]   || false,
             :ssl_verify => config[:ssl_verify] || OpenSSL::SSL::VERIFY_PEER,
