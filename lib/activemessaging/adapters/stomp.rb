@@ -96,7 +96,7 @@ module ActiveMessaging
           end
         end
 
-        def unreceive message, headers={} 
+        def unreceive message, headers={}
           retry_count = message.headers['a13g-retry-count'].to_i || 0
           transaction_id = "transaction-#{message.headers['message-id']}-#{retry_count}"
           # start a transaction, send the message back to the original destination
@@ -121,10 +121,9 @@ module ActiveMessaging
                   retry_headers[:suppress_content_length] = true
               end
                            
-              #retry_destination = retry_headers.delete('destination')
-              retry_destination = headers[:destination]
-              retry_destination = retry_headers.delete('destination') unless retry_destination
-            
+              retry_destination = retry_headers.delete('destination')
+              retry_destination = headers[:destination] if headers[:destination]
+
               if retry_count < @retryMax
                 # now send the message back to the destination
                 #  set the headers for message id, priginal message id, and retry count
@@ -137,6 +136,7 @@ module ActiveMessaging
                 retry_headers['a13g-retry-count'] = retry_count + 1
 
                 # send the updated message to retry in the same transaction
+                logger.warn "retrying message on #{retry_destination}"
                 self.stomp_publish(retry_destination, message.body, retry_headers)
 
               elsif retry_count >= @retryMax && supports_dlq?
@@ -151,6 +151,7 @@ module ActiveMessaging
                 else
                     dlq = @deadLetterQueue
                 end
+                logger.warn "putting message on DLQ: #{dlq}"
                 self.stomp_publish(dlq, message.body, retry_headers)
               end
 
