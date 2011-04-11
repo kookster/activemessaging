@@ -6,6 +6,7 @@ require 'base64'
 require 'cgi'
 require 'time'
 require 'uri'
+require 'rexml/document'
 
 require 'activemessaging/adapters/base'
 
@@ -204,8 +205,7 @@ module ActiveMessaging
 
       		# Sign the string
       		sorted_params = params.sort_by { |key,value| key.downcase }
-      		joined_params = sorted_params.collect { |key, value| key.to_s + value.to_s }
-      		string_to_sign = joined_params.to_s
+      		string_to_sign = sorted_params.collect { |key, value| key.to_s + value.to_s }.join()
       		digest = OpenSSL::Digest::Digest.new('sha1')
           hmac = OpenSSL::HMAC.digest(digest, @secret_access_key, string_to_sign)
           params['Signature'] = Base64.encode64(hmac).chomp
