@@ -111,7 +111,9 @@ module ActiveMessaging
       def connection broker_name='default'
         return @@connections[broker_name] if @@connections.has_key?(broker_name)
         config = load_connection_configuration(broker_name)
-        @@connections[broker_name] = Gateway.adapters[config[:adapter]].new(config)
+        adapter_class = Gateway.adapters[config[:adapter]]
+        raise "Unknown messaging adapter #{config[:adapter].inspect}!" if adapter_class.nil?
+        @@connections[broker_name] = adapter_class.new(config)
       end
 
       def register_adapter adapter_name, adapter_class
