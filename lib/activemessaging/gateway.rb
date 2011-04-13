@@ -223,9 +223,9 @@ module ActiveMessaging
           if message.matches_subscription?(subscription) then
             processed = true
             routing = {
-              :receiver=>subscription.processor_class, 
-              :destination=>subscription.destination,
-              :direction => :incoming
+              :receiver    => subscription.processor_class, 
+              :destination => subscription.destination,
+              :direction   => :incoming
             }
             begin
               execute_filter_chain(:incoming, message, routing) do |m|

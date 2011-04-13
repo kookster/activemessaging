@@ -51,7 +51,7 @@ module ActiveMessaging
         adapter_name = File.basename(a, ".rb")
         require 'activemessaging/adapters/' + adapter_name
       rescue RuntimeError, LoadError => e
-        logger.debug "ActiveMessaging: adapter #{adapter_name} not loaded: #{ e.message }"
+        logger.warn "ActiveMessaging: adapter #{adapter_name} not loaded: #{ e.message }"
       end
     end
   end
@@ -61,7 +61,7 @@ module ActiveMessaging
     begin
       load path
     rescue MissingSourceFile
-      logger.debug "ActiveMessaging: no '#{path}' file to load"
+      logger.error "ActiveMessaging: no '#{path}' file to load"
     rescue
       raise $!, " ActiveMessaging: problems trying to load '#{path}': \n\t#{$!.message}"
     end
@@ -71,11 +71,11 @@ module ActiveMessaging
     load "#{app_root}/lib/activemessaging/message_sender.rb" unless defined?(ActiveMessaging::MessageSender)
     load "#{app_root}/lib/activemessaging/processor.rb" unless defined?(ActiveMessaging::Processor)
     load "#{app_root}/lib/activemessaging/filter.rb" unless defined?(ActiveMessaging::Filter)
-    logger.debug "ActiveMessaging: Loading #{app_root}/app/processors/application.rb" if first
+    logger.info "ActiveMessaging: Loading #{app_root}/app/processors/application.rb" if first
     load "#{app_root}/app/processors/application.rb" if File.exist?("#{app_root}/app/processors/application.rb")
     Dir["#{app_root}/app/processors/*.rb"].each do |f|
       unless f.match(/\/application.rb/)
-        logger.debug "ActiveMessaging: Loading #{f}" if first
+        logger.info "ActiveMessaging: Loading #{f}" if first
         load f
       end
     end
