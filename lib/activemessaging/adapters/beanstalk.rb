@@ -22,7 +22,7 @@ module ActiveMessaging
           @host = cfg[:host] || 'localhost'
           @port = cfg[:port] || 11300
           
-          @connection = ::Beanstalk::Pool.new("#{@host}:#{@port}")
+          @connection = ::Beanstalk::Pool.new(["#{@host}:#{@port}"])
         end
         
         def disconnect
