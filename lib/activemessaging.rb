@@ -1,7 +1,10 @@
+require 'active_support'
+require 'ostruct'
+require 'activemessaging/railtie.rb'
+
 module ActiveMessaging
-  APP_ROOT = ENV['APP_ROOT'] || ENV['RAILS_ROOT'] || ((defined? RAILS_ROOT) && RAILS_ROOT) || File.dirname($0)
-  APP_ENV  = ENV['APP_ENV']  || ENV['RAILS_ENV']  || 'development'
-  ROOT     = File.expand_path(File.join(File.dirname(__FILE__), '..'))
+
+  ROOT = File.expand_path(File.join(File.dirname(__FILE__), '..'))
 
   # Used to indicate that the processing for a thread shoud complete
   class StopProcessingException < Interrupt #:nodoc:
@@ -17,15 +20,21 @@ module ActiveMessaging
   class StopFilterException < Exception #:nodoc:
   end
 
-  def ActiveMessaging.logger
+  def self.logger
     @@logger = nil unless defined? @@logger
-    @@logger ||= RAILS_DEFAULT_LOGGER if defined? RAILS_DEFAULT_LOGGER
-    @@logger ||= ActiveRecord::Base.logger if defined? ActiveRecord
+    @@logger ||= Rails.logger if defined? Rails
     @@logger ||= Logger.new(STDOUT)
     @@logger
   end
 
-  # DEPRECATED, so I understand, but I'm using it nicely below.
+  def self.app_root
+    @@app_root ||= (ENV['APP_ROOT'] || (defined?(::Rails) && ::Rails.root) || ENV['RAILS_ROOT'] || File.dirname($0))
+  end
+
+  def self.app_env
+    @@app_env  ||= (ENV['APP_ENV']  || (defined?(::Rails) && ::Rails.env)  || ENV['RAILS_ENV']  || 'development')
+  end
+
   def self.load_extensions
     require 'logger'
     require 'activemessaging/support'
@@ -48,7 +57,7 @@ module ActiveMessaging
   end
 
   def self.load_config
-    path = File.expand_path("#{APP_ROOT}/config/messaging.rb")
+    path = File.expand_path("#{app_root}/config/messaging.rb")
     begin
       load path
     rescue MissingSourceFile
@@ -59,13 +68,12 @@ module ActiveMessaging
   end
 
   def self.load_processors(first=true)
-    #Load the parent processor.rb, then all child processor classes
-    load APP_ROOT + '/vendor/plugins/activemessaging/lib/activemessaging/message_sender.rb' unless defined?(ActiveMessaging::MessageSender)
-    load APP_ROOT + '/vendor/plugins/activemessaging/lib/activemessaging/processor.rb' unless defined?(ActiveMessaging::Processor)
-    load APP_ROOT + '/vendor/plugins/activemessaging/lib/activemessaging/filter.rb' unless defined?(ActiveMessaging::Filter)
-    logger.debug "ActiveMessaging: Loading #{APP_ROOT + '/app/processors/application.rb'}" if first
-    load APP_ROOT + '/app/processors/application.rb' if File.exist?("#{APP_ROOT}/app/processors/application.rb")
-    Dir[APP_ROOT + '/app/processors/*.rb'].each do |f|
+    load "#{app_root}/lib/activemessaging/message_sender.rb" unless defined?(ActiveMessaging::MessageSender)
+    load "#{app_root}/lib/activemessaging/processor.rb" unless defined?(ActiveMessaging::Processor)
+    load "#{app_root}/lib/activemessaging/filter.rb" unless defined?(ActiveMessaging::Filter)
+    logger.debug "ActiveMessaging: Loading #{app_root}/app/processors/application.rb" if first
+    load "#{app_root}/app/processors/application.rb" if File.exist?("#{app_root}/app/processors/application.rb")
+    Dir["#{app_root}/app/processors/*.rb"].each do |f|
       unless f.match(/\/application.rb/)
         logger.debug "ActiveMessaging: Loading #{f}" if first
         load f
@@ -92,17 +100,20 @@ module ActiveMessaging
 
   def self.start
     if ActiveMessaging::Gateway.subscriptions.empty?
-      err_msg = <<EOM   
+      err_msg = <<-EOM
 
-ActiveMessaging Error: No subscriptions.
-If you have no processor classes in app/processors, add them using the command:
-  script/generate processor DoSomething"
+      ActiveMessaging Error: No subscriptions.
+      
+      If you have no processor classes in app/processors, add them using the command:
+        script/generate processor DoSomething"
 
-If you have processor classes, make sure they include in the class a call to 'subscribes_to':
-  class DoSomethingProcessor < ActiveMessaging::Processor
-    subscribes_to :do_something
+      If you have processor classes, make sure they include in the class a call to 'subscribes_to':
+        class DoSomethingProcessor < ActiveMessaging::Processor
+          subscribes_to :do_something
+          # ...
+        end
 
-EOM
+      EOM
       puts err_msg
       logger.error err_msg
       exit
@@ -111,20 +122,4 @@ EOM
     Gateway.start
   end
 
-end
-
-#load these once to start with
-ActiveMessaging.load_activemessaging
-
-# reload these on each Rails request - leveraging Dispatcher semantics for consistency
-if defined? Rails
-  ActiveMessaging.logger.info "Rails available: Adding dispatcher prepare callback."
-  require 'dispatcher' unless defined?(::Dispatcher)
-  
-  # add processors and config to on_prepare if supported (rails 1.2+)
-  if ::Dispatcher.respond_to? :to_prepare
-    ::Dispatcher.to_prepare :activemessaging do
-      ActiveMessaging.reload_activemessaging
-    end
-  end
 end
