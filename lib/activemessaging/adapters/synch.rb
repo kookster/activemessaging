@@ -9,24 +9,68 @@ module ActiveMessaging
         register :synch
 
         #configurable params
-        attr_accessor :configuration
+        attr_accessor :configuration, :max_process, :processing_pids, :use_fork
 
         #generic init method needed by a13g
         def initialize cfg
           @configuration = cfg
+          
+          @use_fork = @configuration[:use_fork] || true
+
+          # max at once
+          @max_process = 10
+          # keep track of the processes running
+          @processing_pids = {}
+
+          if use_fork
+            Thread.new {
+              watch_processes
+            }
+          end
+        end
+        
+        def watch_processes
+          while true
+            begin
+              pid = Process.wait(0, Process::WNOHANG)
+              if m = processing_pids.delete(pid)
+                ActiveMessaging.logger.debug "ActiveMessaging:synch - processing complete for pid (#{pid}):\n\t#{m}"
+              end
+              sleep(0.5)
+            rescue
+            end
+          end
         end
 
         def send destination_name, message_body, message_headers={}
           message = Message.new(message_body, 'id', message_headers, destination_name, 'MESSAGE')
-          pid = fork {
-            ActiveMessaging.logger.debug "\n-------------------- ActiveMessaging synch before dispath --------------------"
-            ActiveMessaging::Gateway.dispatch(message)
-            ActiveMessaging.logger.debug "-------------------- ActiveMessaging synch after dispath --------------------\n"
-          }
-          Process.waitpid(pid)
+          
+          if use_fork
 
-          # I needed this using mysql2, not exactly sure why the conn gets banged up by the fork, but doesn't hurt much
-          ActiveRecord::Base.verify_active_connections!
+            if processing_pids.size > max_process
+              ActiveMessaging.logger.debug "ActiveMessaging:synch too many processes: #{processing_pids.size} > #{max_process}"
+              sleep(0.5)
+            end
+
+            pid = fork {
+              ActiveMessaging.logger.debug "\n-------------------- ActiveMessaging:synch before fork dispath --------------------"
+              ActiveRecord::Base.verify_active_connections!
+              ActiveMessaging::Gateway.dispatch(message)
+              ActiveMessaging.logger.debug "-------------------- ActiveMessaging:synch after fork dispath --------------------\n"
+            }
+
+            Process.detach(pid)
+            processing_pids[pid] = "Destination: #{destination_name}, Message: #{message_body}"
+
+          else
+
+            ActiveMessaging.logger.debug "\n-------------------- ActiveMessaging:synch before dispath --------------------"
+            ActiveRecord::Base.verify_active_connections!
+            ActiveMessaging::Gateway.dispatch(message)
+            ActiveMessaging.logger.debug "-------------------- ActiveMessaging:synch after dispath --------------------\n"
+
+          end
+          
         end
 
       end
