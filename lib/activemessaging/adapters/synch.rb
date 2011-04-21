@@ -13,9 +13,10 @@ module ActiveMessaging
 
         #generic init method needed by a13g
         def initialize cfg
+          ActiveMessaging.logger.debug "ActiveMessaging::Adapters::Synch::Connection.initialize: #{cfg.inspect}"
           @configuration = cfg
           
-          @use_fork = @configuration[:use_fork] || true
+          @use_fork = !!@configuration[:use_fork]
 
           # max at once
           @max_process = 10
