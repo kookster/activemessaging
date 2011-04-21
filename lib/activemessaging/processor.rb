@@ -36,7 +36,7 @@ module ActiveMessaging
         logger.error "Processor:process! - AbortMessageException caught."
         raise rpe
       rescue Object=>ex
-        logger.error "Processor:process! - error in on_error, will propagate no further: #{ex.message}"
+        logger.error "Processor:process! - error in on_error, will propagate no further: #{ex.message}\n\t#{ex.backtrace.join("\n\t")}"
       end
     end
 
