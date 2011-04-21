@@ -37,7 +37,6 @@ module ActiveMessaging
 
   def self.load_extensions
     require 'logger'
-    require 'activemessaging/support'
     require 'activemessaging/gateway'
     require 'activemessaging/adapter'
     require 'activemessaging/message_sender'
