@@ -27,6 +27,10 @@ module ActiveMessaging
     @@logger
   end
 
+  def self.logger=(logger)
+    @@logger = logger
+  end
+
   def self.app_root
     @@app_root ||= (ENV['APP_ROOT'] || (defined?(::Rails) && ::Rails.root) || ENV['RAILS_ROOT'] || File.dirname($0))
   end
@@ -67,9 +71,6 @@ module ActiveMessaging
   end
 
   def self.load_processors(first=true)
-    load "#{app_root}/lib/activemessaging/message_sender.rb" unless defined?(ActiveMessaging::MessageSender)
-    load "#{app_root}/lib/activemessaging/processor.rb" unless defined?(ActiveMessaging::Processor)
-    load "#{app_root}/lib/activemessaging/filter.rb" unless defined?(ActiveMessaging::Filter)
     logger.info "ActiveMessaging: Loading #{app_root}/app/processors/application.rb" if first
     load "#{app_root}/app/processors/application.rb" if File.exist?("#{app_root}/app/processors/application.rb")
     Dir["#{app_root}/app/processors/*.rb"].each do |f|
