@@ -54,10 +54,11 @@ module ActiveMessaging
             end
 
             pid = fork {
-              ActiveMessaging.logger.debug "\n-------------------- ActiveMessaging:synch before fork dispath --------------------"
-              ActiveRecord::Base.verify_active_connections!
-              ActiveMessaging::Gateway.dispatch(message)
-              ActiveMessaging.logger.debug "-------------------- ActiveMessaging:synch after fork dispath --------------------\n"
+              ActiveMessaging.logger.debug "\n-------------------- ActiveMessaging:synch start fork dispath (#{Process.pid}) --------------------"
+              ActiveMessaging::Gateway.prepare_application
+              ActiveMessaging::Gateway._dispatch(message)
+              ActiveMessaging::Gateway.reset_application
+              ActiveMessaging.logger.debug "-------------------- ActiveMessaging:synch end fork dispath (#{Process.pid})--------------------\n"
             }
 
             Process.detach(pid)
@@ -66,8 +67,9 @@ module ActiveMessaging
           else
 
             ActiveMessaging.logger.debug "\n-------------------- ActiveMessaging:synch before dispath --------------------"
-            ActiveRecord::Base.verify_active_connections!
-            ActiveMessaging::Gateway.dispatch(message)
+            ActiveMessaging::Gateway.prepare_application
+            ActiveMessaging::Gateway._dispatch(message)
+            ActiveMessaging::Gateway.reset_application
             ActiveMessaging.logger.debug "-------------------- ActiveMessaging:synch after dispath --------------------\n"
 
           end
