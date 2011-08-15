@@ -22,7 +22,6 @@ Best bet is the google groups mailing list:
 http://groups.google.com/group/activemessaging-discuss
 
 h1. Fork Details
-This is a forked version of activemessaging located at http://github.com/sgulics/activemessaging
 
 This fork adds the ability to specify a dead letter queue prefix so instead of all messages going to 1 dead letter queue, each message will go to a dead letter queue that is based on the deadLetterQueuePrefix configuration property and the originating queue. 
 
