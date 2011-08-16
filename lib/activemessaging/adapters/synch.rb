@@ -1,3 +1,4 @@
+require 'activemessaging/adapters/base'
 # 
 # This is meant to avoid the need to use a broker in development, and generally make development mode easier
 # 
