@@ -11,7 +11,7 @@ module ActiveMessaging
       
       if defined? Rails
         ActiveMessaging.logger.info "ActiveMessaging: Rails available: Adding dispatcher prepare callback."
-        ActionDispatch::Callbacks.to_prepare :activemessaging do
+        ActionDispatch::Callbacks.to_prepare do
           ActiveMessaging.reload_activemessaging
         end
       end
