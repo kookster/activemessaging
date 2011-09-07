@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = %q{activemessaging}
-  s.version = "0.8.0"
+  s.version = "0.8.2"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Jon Tirsen", "Andrew Kuklewicz", "Olle Jonsson", "Sylvain Perez", "Cliff Moon", "Uwe Kubosch"]
-  s.date = %q{2011-04-13}
+  s.date = %q{2011-08-15}
   s.description = %q{ActiveMessaging is an attempt to bring the simplicity and elegance of rails development to the world of messaging. Messaging, (or event-driven architecture) is widely used for enterprise integration, with frameworks such as Java's JMS, and products such as ActiveMQ, Tibco, IBM MQSeries, etc. Now supporting Rails 3 as of version 0.8.0.}
   s.email = %q{activemessaging-discuss@googlegroups.com}
   s.extra_rdoc_files = [
@@ -55,6 +55,7 @@ Gem::Specification.new do |s|
     "lib/activemessaging/adapters/jms.rb",
     "lib/activemessaging/adapters/reliable_msg.rb",
     "lib/activemessaging/adapters/stomp.rb",
+    "lib/activemessaging/adapters/synch.rb",
     "lib/activemessaging/adapters/test.rb",
     "lib/activemessaging/adapters/wmq.rb",
     "lib/activemessaging/base_message.rb",

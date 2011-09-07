@@ -126,3 +126,7 @@ module ActiveMessaging
   end
 
 end
+
+if !defined?(Rails::Railtie)
+  ActiveMessaging.load_activemessaging
+end
