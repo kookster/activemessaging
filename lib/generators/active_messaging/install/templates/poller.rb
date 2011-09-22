@@ -17,6 +17,9 @@ else
   require File.join(RAILS_ROOT, 'config', 'environment')
 end
 
+require 'active_support'
+require 'activemessaging'
+
 # Load ActiveMessaging processors
 #ActiveMessaging::load_processors
 
