@@ -20,7 +20,7 @@ module ActiveMessaging
           cfg[:passcode] ||= ""
           cfg[:host] ||= "localhost"
           cfg[:port] ||= "61613"
-          cfg[:reliable]  = cfg[:reliable].nil? ? TRUE : cfg[:reliable].nil?
+          cfg[:reliable]  = cfg[:reliable].nil? ? TRUE : cfg[:reliable]
           cfg[:reconnectDelay] ||= 5
           cfg[:clientId] ||= nil
 
