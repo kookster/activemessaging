@@ -1,0 +1,24 @@
+#!/usr/bin/env ruby
+
+ENV['APP_ROOT'] ||= File.expand_path(File.join(File.dirname(__FILE__), '..'))
+APP_ROOT = ENV['APP_ROOT']
+script_file = File.join(APP_ROOT, 'lib', '<%=poller_name%>.rb')
+tmp_dir = File.join(APP_ROOT, 'tmp')
+
+require 'rubygems'
+require 'daemons'
+
+
+options = {
+  :app_name   => "<%=poller_name%>",
+  :dir_mode   => :normal,
+  :dir        => tmp_dir,
+  :multiple   => true,
+  :ontop      => false,
+  :mode       => :load,
+  :backtrace  => true,
+  :monitor    => true,
+  :log_output => true
+}
+
+Daemons.run(script_file,options)
