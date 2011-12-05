@@ -1,0 +1,21 @@
+Description:
+    Configures your application to use active messaging. The following files are installed:
+    1. config/broker.yml - Configures the broker that you will be using. 
+    2. script/poller - This script will start/stop/run the process that will be polling your broker. The name of this file/process is configurable. See Usage below. 
+    3. lib/poller.rb - The poller script will use this file to start up ActiveMesssaging
+  
+    The generator will also create a app/processors directory and modify your application.rb so that app/processors is in the autoload path
+
+Usage:
+    If you do not pass in an argument then the poller filename/process will be called poller. You can override this default by passing in the name that you want the file and process to be. 
+  
+Examples:
+    rails g activemessaging:install
+  
+      Installs activemessaging with the poller process named poller
+
+    rails g activemessaging:install POLLER_NAME
+  
+      Installs activemessaging but allows you to customize the name of the poller
+      
+      
