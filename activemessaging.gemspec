@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = %q{activemessaging}
-  s.version = "0.8.2"
+  s.version = "0.9.0"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Jon Tirsen", "Andrew Kuklewicz", "Olle Jonsson", "Sylvain Perez", "Cliff Moon", "Uwe Kubosch"]
-  s.date = %q{2011-08-15}
+  s.date = %q{2011-12-05}
   s.description = %q{ActiveMessaging is an attempt to bring the simplicity and elegance of rails development to the world of messaging. Messaging, (or event-driven architecture) is widely used for enterprise integration, with frameworks such as Java's JMS, and products such as ActiveMQ, Tibco, IBM MQSeries, etc. Now supporting Rails 3 as of version 0.8.0.}
   s.email = %q{activemessaging-discuss@googlegroups.com}
   s.extra_rdoc_files = [
@@ -67,6 +67,18 @@ Gem::Specification.new do |s|
     "lib/activemessaging/railtie.rb",
     "lib/activemessaging/test_helper.rb",
     "lib/activemessaging/trace_filter.rb",
+    "lib/generators/active_messaging/install/USAGE",
+    "lib/generators/active_messaging/install/install_generator.rb",
+    "lib/generators/active_messaging/install/templates/application_processor.rb",
+    "lib/generators/active_messaging/install/templates/broker.yml",
+    "lib/generators/active_messaging/install/templates/poller",
+    "lib/generators/active_messaging/install/templates/poller.rb",
+    "lib/generators/active_messaging/processor/USAGE",
+    "lib/generators/active_messaging/processor/processor_generator.rb",
+    "lib/generators/active_messaging/processor/templates/messaging.rb",
+    "lib/generators/active_messaging/processor/templates/processor.rb",
+    "lib/generators/active_messaging/processor/templates/processor_spec.rb",
+    "lib/generators/active_messaging/processor/templates/processor_test.rb",
     "lib/tasks/start_consumers.rake",
     "poller.rb",
     "test/all_tests.rb",
