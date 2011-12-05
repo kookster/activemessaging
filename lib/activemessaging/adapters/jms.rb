@@ -1,10 +1,13 @@
-
 if defined?(JRUBY_VERSION)
 #require 'java'
 include Java
 
-import javax.naming.InitialContext
-import javax.jms.MessageListener
+begin
+  java_import javax.naming.InitialContext
+  java_import javax.jms.MessageListener
+rescue NameError
+  raise LoadError, "ActiveMessaging::Adapter::Jms needs Jave EE classes on the CLASSPATH"
+end
 
 module ActiveMessaging
   module Adapters
