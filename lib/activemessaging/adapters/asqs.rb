@@ -17,10 +17,10 @@ module ActiveMessaging
       class Connection < ActiveMessaging::Adapters::BaseConnection
         register :asqs
 
-        QUEUE_NAME_LENGTH = 1..80
-        MESSAGE_SIZE = 1..(8 * 1024)
-        VISIBILITY_TIMEOUT = 0..(24 * 60 * 60)
-        NUMBER_OF_MESSAGES = 1..255
+        QUEUE_NAME_LENGTH    = 1..80
+        MESSAGE_SIZE         = 1..(8 * 1024)
+        VISIBILITY_TIMEOUT   = 0..(24 * 60 * 60)
+        NUMBER_OF_MESSAGES   = 1..255
         GET_QUEUE_ATTRIBUTES = ['All', 'ApproximateNumberOfMessages', 'VisibilityTimeout']
         SET_QUEUE_ATTRIBUTES = ['VisibilityTimeout']
 
@@ -50,6 +50,7 @@ module ActiveMessaging
         
           #initialize the subscriptions and queues
           @subscriptions = {}
+          @queues_by_priority = {}
           @current_subscription = 0
           queues
         end
@@ -69,6 +70,10 @@ module ActiveMessaging
           else
             @subscriptions[queue.name] = Subscription.new(queue.name, message_headers)
           end
+          priority = @subscriptions[queue.name].priority
+
+          @queues_by_priority[priority] = [] unless @queues_by_priority.has_key?(priority)
+          @queues_by_priority[priority] << queue.name unless @queues_by_priority[priority].include?(queue.name)
         end
 
         # queue_name string, headers hash
@@ -76,7 +81,10 @@ module ActiveMessaging
         def unsubscribe queue_name, message_headers={}
           if @subscriptions[queue_name]
             @subscriptions[queue_name].remove
-            @subscriptions.delete(queue_name) if @subscriptions[queue_name].count <= 0
+            if @subscriptions[queue_name].count <= 0
+              sub = @subscriptions.delete(queue_name)
+              @queues_by_priority[sub.priority].delete(queue_name)
+            end
           end
         end
 
@@ -87,24 +95,53 @@ module ActiveMessaging
           send_messsage queue, message_body
         end
 
-        # receive a single message from any of the subscribed queues
-        # check each queue once, then sleep for poll_interval
+        #  new receive respects priorities
         def receive
-          raise "No subscriptions to receive messages from." if (@subscriptions.nil? || @subscriptions.empty?)
-          start = @current_subscription
-          while true
-            # puts "calling receive..."
-            @current_subscription = ((@current_subscription < @subscriptions.length-1) ? @current_subscription + 1 : 0)
-            sleep poll_interval if (@current_subscription == start)
-            queue_name = @subscriptions.keys.sort[@current_subscription]
-            queue = queues[queue_name]
-            subscription = @subscriptions[queue_name]
-            unless queue.nil?
-              messages = retrieve_messsages queue, 1, subscription.headers[:visibility_timeout]
-              return messages[0] unless (messages.nil? or messages.empty? or messages[0].nil?)
+          message = nil
+          # loop through the priorities
+          @queues_by_priority.keys.sort.each do |priority|
+            # puts " - priority: #{priority}"
+            # loop through queues for the priority in random order each time
+            @queues_by_priority[priority].shuffle.each do |queue_name|
+              # puts "   - queue_name: #{queue_name}"
+              queue = queues[queue_name]
+              subscription = @subscriptions[queue_name]
+
+              next if queue.nil? || subscription.nil?
+              messages = retrieve_messsages(queue, 1, subscription.headers[:visibility_timeout])
+              
+              if (messages && !messages.empty?)
+                message = messages[0]
+              end
+
+              break if message
             end
+
+            break if message
           end
+
+          # puts " - message: #{message}"
+          message
         end
+
+        # # receive a single message from any of the subscribed queues
+        # # check each queue once, then sleep for poll_interval
+        # def receive
+        #   raise "No subscriptions to receive messages from." if (@subscriptions.nil? || @subscriptions.empty?)
+        #   start = @current_subscription
+        #   while true
+        #     # puts "calling receive..."
+        #     @current_subscription = ((@current_subscription < @subscriptions.length-1) ? @current_subscription + 1 : 0)
+        #     sleep poll_interval if (@current_subscription == start)
+        #     queue_name = @subscriptions.keys.sort[@current_subscription]
+        #     queue = queues[queue_name]
+        #     subscription = @subscriptions[queue_name]
+        #     unless queue.nil?
+        #       messages = retrieve_messsages queue, 1, subscription.headers[:visibility_timeout]
+        #       return messages[0] unless (messages.nil? or messages.empty? or messages[0].nil?)
+        #     end
+        #   end
+        # end
 
         def received message, headers={}
           begin
@@ -359,9 +396,10 @@ module ActiveMessaging
       end
 
       class Subscription
-        attr_accessor :name, :headers, :count
+        attr_accessor :destination, :headers, :count, :priority
       
         def initialize(destination, headers={}, count=1)
+          @priority = headers.delete(:priority) || 1001
           @destination, @headers, @count = destination, headers, count
         end
       
