@@ -44,7 +44,7 @@ module ActiveMessaging
           destination.send Message.new(message_body, nil, message_headers, destination_name)
         end
         
-        def receive
+        def receive(options={})
           destination = @destinations.find do |q|
             find_subscription(q.name) && !q.empty?
           end

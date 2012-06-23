@@ -46,7 +46,7 @@ module ActiveMessaging
           @connection.put(message, priority, delay, ttr)
         end
         
-        def receive
+        def receive(options={})
           message = @connection.reserve
           Beanstalk::Message.new message
         end

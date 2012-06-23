@@ -73,7 +73,7 @@ module ActiveMessaging
 
         # receive a single message from any of the subscribed destinations
         # check each destination once, then sleep for poll_interval
-        def receive
+        def receive(options={})
           m = @stomp_connection.receive
           Message.new(m) if m
         end

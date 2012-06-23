@@ -89,7 +89,7 @@ module ActiveMessaging
 
       # receive a single message from any of the subscribed destinations
       # check each destination once, then sleep for poll_interval
-      def receive
+      def receive(options={})
 
         raise "No subscriptions to receive messages from." if (subscriptions.nil? || subscriptions.empty?)
         start = current_subscription

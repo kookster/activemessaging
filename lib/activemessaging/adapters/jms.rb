@@ -84,22 +84,24 @@ module ActiveMessaging
           end
           producer.send message
         end
-        
-        def receive_any
-          @consumers.find do |k, c|
-            message = c.receive(1)
-            return condition_message(message) unless message.nil?
-          end
+
+        def receive(options={})
+          queue_name = options[:queue_name]
+          headers = options[:headers] || {}
+          receive_message(queue_name, headers)
         end
-        
-        def receive queue_name=nil, headers={}
+
+        def receive_message(queue_name=nil, headers={})
           if queue_name.nil?
-            receive_any
+            @consumers.find do |k, c|
+              message = c.receive(1)
+              return condition_message(message) unless message.nil?
+            end
           else
-            consumer = subscribe queue_name, headers
+            consumer = subscribe(queue_name, headers)
             message = consumer.receive(1)
-            unsubscribe queue_name, headers
-            condition_message message
+            unsubscribe(queue_name, headers)
+            condition_message(message)
           end
         end
         

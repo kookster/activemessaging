@@ -49,7 +49,7 @@ module ActiveMessaging
         end
 
         # Receive method needed by a13g
-        def receive
+        def receive(options={})
           raise "No subscription to receive messages from" if (@queue_names.nil? || @queue_names.empty?)
           start = @current_queue
           while true

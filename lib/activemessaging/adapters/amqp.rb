@@ -79,7 +79,7 @@ module ActiveMessaging
           client.server.send_frame(::Carrot::AMQP::Protocol::Basic::Reject.new(:delivery_tag => message.headers[:delivery_tag]))
         end
         
-        def receive
+        def receive(options={})
           while true 
             message = queue.pop(:ack => true)
             unless message.nil?

@@ -39,7 +39,8 @@ module ActiveMessaging
 
       # receive a single message from any of the subscribed destinations
       # check each destination once, then sleep for poll_interval
-      def receive
+      # adding options,optionally, so a poller can get certain messages (e.g. by priority)
+      def receive(options={})
       end
 
       # called after a message is successfully received and processed
