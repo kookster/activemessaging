@@ -33,6 +33,7 @@ begin
 
     # added
     gemspec.add_dependency('activesupport', '>= 1.0.0')
+    gemspec.add_dependency('celluloid')
     
   end
   Jeweler::GemcutterTasks.new
