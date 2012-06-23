@@ -45,6 +45,7 @@ module ActiveMessaging
   def self.load_extensions
     require 'logger'
     require 'activemessaging/gateway'
+    require 'activemessaging/threaded_poller'
     require 'activemessaging/adapter'
     require 'activemessaging/message_sender'
     require 'activemessaging/processor'
@@ -66,8 +67,6 @@ module ActiveMessaging
     path = File.expand_path("#{app_root}/config/messaging.rb")
     begin
       load path
-    rescue MissingSourceFile
-      logger.error "ActiveMessaging: no '#{path}' file to load"
     rescue
       raise $!, " ActiveMessaging: problems trying to load '#{path}': \n\t#{$!.message}"
     end
@@ -125,8 +124,4 @@ module ActiveMessaging
     Gateway.start
   end
 
-end
-
-if !defined?(Rails::Railtie)
-  ActiveMessaging.load_activemessaging
 end

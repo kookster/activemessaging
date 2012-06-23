@@ -96,7 +96,7 @@ module ActiveMessaging
         end
 
         #  new receive respects priorities
-        def receive
+        def receive(options={})
           message = nil
           # loop through the priorities
           @queues_by_priority.keys.sort.each do |priority|

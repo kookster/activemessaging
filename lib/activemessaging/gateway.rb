@@ -1,25 +1,28 @@
 require 'yaml'
 require 'ostruct'
 require 'erb'
+require 'thread'
 
 module ActiveMessaging
 
   class Gateway
-    cattr_accessor :adapters, :subscriptions, :named_destinations, :filters, :processor_groups, :connections
-    @@adapters = {}
-    @@subscriptions = {}
-    @@named_destinations = {}
-    @@filters = []
-    @@connections = {}
-    @@processor_groups = {}
-    @@current_processor_group = nil
+ 
+    @adapters = {}
+    @subscriptions = {}
+    @named_destinations = {}
+    @filters = []
+    @connections = {}
+    @processor_groups = {}
+    @current_processor_group = nil
 
     # these are used to manage the running connection threads
-    @@running = true
-    @@connection_threads = {}
-    @@guard = Mutex.new
- 
-    class <<self
+    @running = true
+    @connection_threads = {}
+    @guard = Mutex.new
+
+    class << self
+
+      attr_accessor :adapters, :subscriptions, :named_destinations, :filters, :processor_groups, :connections
 
       # Starts up an message listener to start polling for messages on each configured connection, and dispatching processing
       def start
@@ -28,9 +31,9 @@ module ActiveMessaging
         subscribe
 
         # for each connection, start a thread
-        @@connections.each do |name, conn|
-          @@connection_threads[name] = Thread.start do
-            while @@running
+        @connections.each do |name, conn|
+          @connection_threads[name] = Thread.start do
+            while @running
               begin
                 Thread.current[:message] = nil
                 Thread.current[:message] = conn.receive
@@ -42,7 +45,11 @@ module ActiveMessaging
               rescue Object=>exception
                 ActiveMessaging.logger.error "ActiveMessaging: thread[#{name}]: Exception from connection.receive: #{exception.message}\n" + exception.backtrace.join("\n\t")
               ensure
-                dispatch Thread.current[:message] if Thread.current[:message]
+                if Thread.current[:message]
+                  @guard.synchronize {
+                    dispatch Thread.current[:message]
+                  }
+                end
                 Thread.current[:message] = nil
               end
               Thread.pass
@@ -51,11 +58,11 @@ module ActiveMessaging
           end
         end
         
-        while @@running
+        while @running
           trap("TERM", "EXIT")
           living = false
-          @@connection_threads.each { |name, thread| living ||=  thread.alive? }
-          @@running = living
+          @connection_threads.each { |name, thread| living ||=  thread.alive? }
+          @running = living
           sleep 1
         end
         ActiveMessaging.logger.error "All connection threads have died..."
@@ -72,14 +79,14 @@ module ActiveMessaging
       
       def stop
         # first tell the threads to stop their looping, so they'll stop when next complete a receive/dispatch cycle
-        @@running = false
+        @running = false
         
         # if they are dispatching (i.e. !thread[:message].nil?), wait for them to finish
         # if they are receiving (i.e. thread[:message].nil?), stop them by raising exception
         dispatching = true
         while dispatching
           dispatching = false
-          @@connection_threads.each do |name, thread|
+          @connection_threads.each do |name, thread|
             if thread[:message]
               dispatching = true
               # if thread got killed, but dispatch not done, try it again
@@ -109,15 +116,15 @@ module ActiveMessaging
       end
       
       def connection broker_name='default'
-        return @@connections[broker_name] if @@connections.has_key?(broker_name)
+        return @connections[broker_name] if @connections.has_key?(broker_name)
         config = load_connection_configuration(broker_name)
         adapter_class = Gateway.adapters[config[:adapter]]
         raise "Unknown messaging adapter #{config[:adapter].inspect}!" if adapter_class.nil?
-        @@connections[broker_name] = adapter_class.new(config)
+        @connections[broker_name] = adapter_class.new(config)
       end
 
       def register_adapter adapter_name, adapter_class
-        adapters[adapter_name] = adapter_class
+        Gateway.adapters[adapter_name] = adapter_class
       end
       
       def filter filter, options = {}
@@ -134,8 +141,8 @@ module ActiveMessaging
       end
 
       def disconnect
-        @@connections.each { |key,connection| connection.disconnect }
-        @@connections = {}
+        @connections.each { |key,connection| connection.disconnect }
+        @connections = {}
       end
 
       def execute_filter_chain(direction, message, details={})
@@ -199,19 +206,15 @@ module ActiveMessaging
       end
       
       def dispatch(message)
-        @@guard.synchronize {
-          begin
-            prepare_application
-            _dispatch(message)
-          rescue Object => exc
-            ActiveMessaging.logger.error "Dispatch exception: #{exc}"
-            ActiveMessaging.logger.error exc.backtrace.join("\n\t")
-            raise exc
-          ensure
-            ActiveMessaging.logger.flush rescue nil
-            reset_application
-          end
-        }
+        prepare_application
+        _dispatch(message)
+      rescue Object => exc
+        ActiveMessaging.logger.error "Dispatch exception: #{exc}"
+        ActiveMessaging.logger.error exc.backtrace.join("\n\t")
+        raise exc
+      ensure
+        ActiveMessaging.logger.flush rescue nil
+        reset_application
       end
 
       def _dispatch(message)
@@ -279,7 +282,7 @@ module ActiveMessaging
         proc_name = processor.name.underscore
         proc_sym = processor.name.underscore.to_sym
         if (!current_processor_group || processor_groups[current_processor_group].include?(proc_sym))
-          @@subscriptions["#{proc_name}:#{destination_name}"]= Subscription.new(find_destination(destination_name), processor, headers)
+          @subscriptions["#{proc_name}:#{destination_name}"]= Subscription.new(find_destination(destination_name), processor, headers)
         end
       end
 
@@ -335,13 +338,13 @@ module ActiveMessaging
       end
 
       def current_processor_group
-        if ARGV.length > 0 && !@@current_processor_group
+        if ARGV.length > 0 && !@current_processor_group
           ARGV.each {|arg|
             pair = arg.split('=')
             if pair[0] == 'process-group'
               group_sym = pair[1].to_sym
               if processor_groups.has_key? group_sym
-                @@current_processor_group = group_sym
+                @current_processor_group = group_sym
               else
                 ActiveMessaging.logger.error "Unrecognized process-group."
                 ActiveMessaging.logger.error "You specified process-group #{pair[1]}, make sure this is specified in config/messaging.rb"
@@ -353,7 +356,7 @@ module ActiveMessaging
             end
           }
         end
-        @@current_processor_group
+        @current_processor_group
       end
       
       def load_connection_configuration(label='default')
