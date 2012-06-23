@@ -1,3 +1,6 @@
+# This owes no small debt to sidekiq for showing how to use celluloid for polling for messages.
+# https://github.com/mperham/sidekiq/blob/master/lib/sidekiq/manager.rb
+
 require 'celluloid'
 
 module ActiveMessaging
@@ -25,7 +28,7 @@ module ActiveMessaging
       self.receiver = MessageReceiver.new(current_actor, ActiveMessaging::Gateway.connection(connection))
       self.workers = pool_size.times.collect{|i| Worker.new_link(current_actor)}
       pool_size.times{ receive }
-      procline
+      log_status
     end
 
     def stop
@@ -33,9 +36,9 @@ module ActiveMessaging
       workers.each { |w| w.terminate if w.alive? }
     end
 
-    def procline
+    def log_status
       ActiveMessaging.logger.info("ActiveMessaging::ThreadedPoller: #{connection}, #{pool_size}, #{workers.count}, #{busy.count}, #{running}")
-      after(5){ procline }
+      after(5){ log_status }
     end
 
     def dispatch(message)

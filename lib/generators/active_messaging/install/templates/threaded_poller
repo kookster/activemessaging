@@ -1,0 +1,45 @@
+#!/usr/bin/env ruby
+
+# The threaded poller will use celluloid to generate many threads for a single poller process to handle messages
+# Yes, I absolutely looked at the sidekiq manager code, and this code is very very similar
+# This script also shows how to use the poller without loading Rails, though it loads the app lib directory
+# this is tested on 1.9.3, and rails 3+
+
+# Make sure stdout and stderr write out without delay for using with daemon like scripts
+STDOUT.sync = true; STDOUT.flush
+STDERR.sync = true; STDERR.flush
+
+# we're not going to load rails, but activemessaging does expect there to be an app root
+# this goes back to when it was used in both rails or merb, but work with just not loading a framework
+app_root = File.expand_path(File.join(File.dirname(__FILE__), '..'))
+ENV['APP_ROOT'] ||= app_root
+
+# minimal requirements, other requires are in the lib
+require 'rubygems'
+require 'bundler/setup'
+
+# load the app lib directory
+lib_path = File.dirname("#{app_root}/lib")
+$:.unshift(lib_path)
+Dir["#{lib_path}/**/*.rb"].each {|file| require file unless file.match(/poller\.rb/) }
+
+# require and load activemessaging
+require 'activemessaging'
+ActiveMessaging.load_activemessaging
+
+# configure the connection (there can be multiple defined in broker.yml) and number of threads
+connection_name = 'default'
+thread_count    = 3
+
+# start it up!
+begin
+  trap("TERM", "EXIT")
+  @poller = ActiveMessaging::ThreadedPoller.new(connection_name, thread_count)
+  @poller.start!
+  sleep
+rescue Interrupt
+  puts "-- Interrupt --"
+  @poller.stop!
+  @poller.wait(:shutdown)
+  exit(0)
+end
