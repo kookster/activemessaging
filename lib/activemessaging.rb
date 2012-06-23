@@ -1,4 +1,5 @@
-require 'active_support'
+require 'logger'
+require 'active_support/all'
 require 'ostruct'
 
 if defined?(Rails::Railtie)
