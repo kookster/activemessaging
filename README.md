@@ -6,11 +6,11 @@ Here's a sample of a processor class that handles incoming messages:
 
     class HelloWorldProcessor < ActiveMessaging::Processor
     	subscribes_to :hello_world
-      
-   		def on_message(message)
-      		puts "received: " + message
+        
+        def on_message(message)
+        	puts "received: " + message
       	end
-	end
+    end
 
 
 Support
