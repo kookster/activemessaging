@@ -4,15 +4,13 @@ ActiveMessaging is a generic framework to ease using messaging, but is not tied 
 
 Here's a sample of a processor class that handles incoming messages:
 
-class HelloWorldProcessor < ActiveMessaging::Processor
-
-  subscribes_to :hello_world
-
-  def on_message(message)
-    puts "received: " + message
-  end
-
-end
+    class HelloWorldProcessor < ActiveMessaging::Processor
+    	subscribes_to :hello_world
+      
+   		def on_message(message)
+      		puts "received: " + message
+      	end
+	end
 
 
 Support
