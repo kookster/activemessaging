@@ -29,12 +29,12 @@ ActiveMessaging.load_activemessaging
 
 # configure the connection (there can be multiple defined in broker.yml) and number of threads
 connection_name = 'default'
-thread_count    = 3
+configuration   = [{:pool_size => 3}]
 
 # start it up!
 begin
   trap("TERM", "EXIT")
-  @poller = ActiveMessaging::ThreadedPoller.new(connection_name, thread_count)
+  @poller = ActiveMessaging::ThreadedPoller.new(connection_name, configuration)
   @poller.start!
   sleep
 rescue Interrupt

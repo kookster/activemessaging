@@ -162,7 +162,7 @@ module ActiveMessaging
         def create_queue(name)
           validate_new_queue name
       		response = make_request('CreateQueue', nil, {'QueueName'=>name})
-          add_queue response.get_text("//QueueUrl") unless response.nil?
+          add_queue(response.get_text("//QueueUrl")) unless response.nil?
         end      	
 
         def delete_queue queue
@@ -301,7 +301,9 @@ module ActiveMessaging
 
         def get_or_create_queue queue_name
           qs = queues
-          qs.has_key?(queue_name) ? qs[queue_name] : create_queue(queue_name)
+          q = qs.has_key?(queue_name) ? qs[queue_name] : create_queue(queue_name)
+          raise "could not get or create queue: #{queue_name}" unless q
+          q
         end
 
         def queues
