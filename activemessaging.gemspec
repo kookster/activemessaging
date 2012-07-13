@@ -13,10 +13,10 @@ Gem::Specification.new do |s|
   s.description = "ActiveMessaging is an attempt to bring the simplicity and elegance of rails development to the world of messaging. Messaging, (or event-driven architecture) is widely used for enterprise integration, with frameworks such as Java's JMS, and products such as ActiveMQ, Tibco, IBM MQSeries, etc. Now supporting Rails 3 as of version 0.8.0."
   s.email = "activemessaging-discuss@googlegroups.com"
   s.extra_rdoc_files = [
-    "README"
+    "README.md"
   ]
   s.files = [
-    "README",
+    "README.md",
     "Rakefile",
     "VERSION",
     "activemessaging.gemspec",
