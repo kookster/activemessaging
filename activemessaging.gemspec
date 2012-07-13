@@ -4,14 +4,14 @@
 # -*- encoding: utf-8 -*-
 
 Gem::Specification.new do |s|
-  s.name = %q{activemessaging}
-  s.version = "0.9.0"
+  s.name = "activemessaging"
+  s.version = "0.10.0"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Jon Tirsen", "Andrew Kuklewicz", "Olle Jonsson", "Sylvain Perez", "Cliff Moon", "Uwe Kubosch"]
-  s.date = %q{2012-06-20}
-  s.description = %q{ActiveMessaging is an attempt to bring the simplicity and elegance of rails development to the world of messaging. Messaging, (or event-driven architecture) is widely used for enterprise integration, with frameworks such as Java's JMS, and products such as ActiveMQ, Tibco, IBM MQSeries, etc. Now supporting Rails 3 as of version 0.8.0.}
-  s.email = %q{activemessaging-discuss@googlegroups.com}
+  s.date = "2012-07-13"
+  s.description = "ActiveMessaging is an attempt to bring the simplicity and elegance of rails development to the world of messaging. Messaging, (or event-driven architecture) is widely used for enterprise integration, with frameworks such as Java's JMS, and products such as ActiveMQ, Tibco, IBM MQSeries, etc. Now supporting Rails 3 as of version 0.8.0."
+  s.email = "activemessaging-discuss@googlegroups.com"
   s.extra_rdoc_files = [
     "README"
   ]
@@ -74,6 +74,7 @@ Gem::Specification.new do |s|
     "lib/generators/active_messaging/install/templates/broker.yml",
     "lib/generators/active_messaging/install/templates/poller",
     "lib/generators/active_messaging/install/templates/poller.rb",
+    "lib/generators/active_messaging/install/templates/threaded_poller",
     "lib/generators/active_messaging/processor/USAGE",
     "lib/generators/active_messaging/processor/processor_generator.rb",
     "lib/generators/active_messaging/processor/templates/messaging.rb",
@@ -94,22 +95,10 @@ Gem::Specification.new do |s|
     "test/test_helper.rb",
     "test/tracer_test.rb"
   ]
-  s.homepage = %q{http://github.com/kookster/activemessaging}
+  s.homepage = "http://github.com/kookster/activemessaging"
   s.require_paths = ["lib"]
-  s.rubygems_version = %q{1.4.2}
-  s.summary = %q{Official activemessaging gem, now hosted on github.com/kookster. (kookster prefix temporary)}
-  s.test_files = [
-    "test/all_tests.rb",
-    "test/asqs_test.rb",
-    "test/config_test.rb",
-    "test/filter_test.rb",
-    "test/gateway_test.rb",
-    "test/jms_test.rb",
-    "test/reliable_msg_test.rb",
-    "test/stomp_test.rb",
-    "test/test_helper.rb",
-    "test/tracer_test.rb"
-  ]
+  s.rubygems_version = "1.8.22"
+  s.summary = "Official activemessaging gem, now hosted on github.com/kookster. (kookster prefix temporary)"
 
   if s.respond_to? :specification_version then
     s.specification_version = 3

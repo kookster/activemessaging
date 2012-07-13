@@ -98,8 +98,15 @@ module ActiveMessaging
         #  new receive respects priorities
         def receive(options={})
           message = nil
+
+          only_priorities = options[:priorities]
+
           # loop through the priorities
           @queues_by_priority.keys.sort.each do |priority|
+
+            # skip this priority if there is a list, and it is not in the list
+            next if only_priorities && !only_priorities.include?(priority.to_i)
+
             # puts " - priority: #{priority}"
             # loop through queues for the priority in random order each time
             @queues_by_priority[priority].shuffle.each do |queue_name|

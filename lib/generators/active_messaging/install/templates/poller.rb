@@ -3,25 +3,20 @@
 STDOUT.sync = true; STDOUT.flush
 STDERR.sync = true; STDERR.flush
 
-#Try to Load Merb
-merb_init_file = File.expand_path(File.dirname(__FILE__)+'/../config/merb_init')
-if File.exists? merb_init_file
-  require File.expand_path(File.dirname(__FILE__)+'/../config/boot')
-  #need this because of the CWD
-  Merb.root = MERB_ROOT
-  require merb_init_file
+app_root = ENV['APP_ROOT'] || File.expand_path(File.join(File.dirname(__FILE__), '..', '..'))
+application_file = File.join(app_root, 'config', 'environment.rb')
+
+if File.exist?(application_file)
+  load application_file
 else
-  # Load Rails
-  RAILS_ROOT=File.expand_path(File.join(File.dirname(__FILE__), '..'))
-  require File.join(RAILS_ROOT, 'config', 'boot')
-  require File.join(RAILS_ROOT, 'config', 'environment')
+  raise "#{application_file} does not exist!"
 end
 
-require 'active_support'
-require 'activemessaging'
+Rails.logger = Logger.new(STDOUT)
+ActiveMessaging.logger = Rails.logger
 
-# Load ActiveMessaging processors
-#ActiveMessaging::load_processors
+# Load ActiveMessaging
+ActiveMessaging::load_processors
 
 # Start it up!
 ActiveMessaging::start

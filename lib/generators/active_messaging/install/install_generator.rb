@@ -12,7 +12,12 @@ module ActiveMessaging
       template "poller", "script/#{poller_name}"
       chmod("script/#{poller_name}", 0755)
     end
-    
+
+    def copy_threaded_poller
+      template "threaded_poller", "script/threaded_#{poller_name}"
+      chmod("script/threaded_#{poller_name}", 0755)
+    end
+
     def copy_poller_rb
       copy_file "poller.rb", "lib/#{poller_name}.rb"
     end
