@@ -36,7 +36,7 @@ module ActiveMessaging
   end
 
   def self.app_root
-    @@app_root ||= (ENV['APP_ROOT'] || (defined?(::Rails) && ::Rails.root) || ENV['RAILS_ROOT'] || File.dirname($0))
+    @@app_root ||= (ENV['APP_ROOT'] || (defined?(::Rails) && ::Rails.root) || ENV['RAILS_ROOT'] || File.expand_path(File.dirname($0), '..'))
   end
 
   def self.app_env
