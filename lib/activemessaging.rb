@@ -74,10 +74,10 @@ module ActiveMessaging
   end
 
   def self.load_processors(first=true)
-    logger.info "ActiveMessaging: Loading #{app_root}/app/processors/application.rb" if first
-    load "#{app_root}/app/processors/application.rb" if File.exist?("#{app_root}/app/processors/application.rb")
+    logger.info "ActiveMessaging: Loading #{app_root}/app/processors/application_processor.rb" if first
+    load "#{app_root}/app/processors/application_processor.rb" if File.exist?("#{app_root}/app/processors/application_processor.rb")
     Dir["#{app_root}/app/processors/*.rb"].each do |f|
-      unless f.match(/\/application.rb/)
+      unless f.match(/\/application_processor.rb/)
         logger.info "ActiveMessaging: Loading #{f}" if first
         load f
       end
