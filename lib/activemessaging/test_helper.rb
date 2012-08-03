@@ -24,12 +24,12 @@ module ActiveMessaging #:nodoc:
     def self.reset
       unsubscribe
       disconnect
-      @@filters = []
-      @@subscriptions = {}
-      @@named_destinations = {}
-      @@processor_groups = {}
-      @@current_processor_group = nil
-      @@connections = {}
+      @filters = []
+      @subscriptions = {}
+      @named_destinations = {}
+      @processor_groups = {}
+      @current_processor_group = nil
+      @connections = {}
     end    
   end
   
