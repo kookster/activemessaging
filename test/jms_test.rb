@@ -9,9 +9,9 @@ class JmsTest < Test::Unit::TestCase
   def setup
     @test_txt = 'Yo Homie!'
     @isolation_const = rand(99999999)
-    @connection = ActiveMessaging::Adapters::Jms::Connection.new(:url => 'tcp://localhost:61616',
-      :login => '', 
-      :passcode => '', 
+    @connection = ActiveMessaging::Adapters::Jms::Connection.new(:url => 'vm://jms_test',
+      :login => '',
+      :passcode => '',
       :connection_factory => 'org.apache.activemq.ActiveMQConnectionFactory')
   end
   
@@ -42,6 +42,7 @@ class JmsTest < Test::Unit::TestCase
   
   def test_one_off_receive
     @connection.send "/queue/OneOff#{@isolation_const}", "one off message"
+    sleep 2
     message = @connection.receive "/queue/OneOff#{@isolation_const}"
     assert_equal "one off message", message.body
     assert_equal "MESSAGE", message.command

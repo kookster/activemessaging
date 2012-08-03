@@ -23,7 +23,9 @@ GEM
       git (>= 1.2.5)
       rake
       rdoc
+    jruby-activemq (5.5.1-java)
     json (1.7.4)
+    json (1.7.4-java)
     macaddr (1.6.1)
       systemu (~> 2.5.0)
     rake (0.9.2.2)
@@ -38,6 +40,7 @@ GEM
       macaddr (~> 1.0)
 
 PLATFORMS
+  java
   ruby
 
 DEPENDENCIES
@@ -46,5 +49,6 @@ DEPENDENCIES
   appraisal
   i18n
   jeweler
+  jruby-activemq
   reliable-msg (~> 1.1)
   stomp
