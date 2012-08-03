@@ -1,7 +1,6 @@
 require 'rake'
 require 'rake/testtask'
 require 'rdoc/rdoc'
-require 'rake/gempackagetask'
 
 desc 'Default: run unit tests.'
 task :default => :test
@@ -32,9 +31,13 @@ begin
     gemspec.authors = ["Jon Tirsen", "Andrew Kuklewicz", "Olle Jonsson", "Sylvain Perez", "Cliff Moon", 'Uwe Kubosch']
 
     # added
-    gemspec.add_dependency('activesupport', '>= 1.0.0')
+    gemspec.add_dependency('activesupport', '>= 2.3.11')
     gemspec.add_dependency('celluloid')
-    
+
+    gemspec.add_development_dependency('jeweler')
+    gemspec.add_development_dependency('stomp')
+    #gemspec.add_development_dependency('reliable-msg')
+
   end
   Jeweler::GemcutterTasks.new
 rescue LoadError
@@ -66,8 +69,3 @@ end
 #   s.add_dependency(%q<rubigen>, [">= 1.5.2"])
 #   #s.add_dependency(%q<common-pool-cliffmoon>, [">= 0.0.3"])
 # end
-
-# desc 'Generate ActiveMessaging gem.'
-# Rake::GemPackageTask.new(gem_spec) do |pkg|
-# end
-

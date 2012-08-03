@@ -2,8 +2,10 @@ PATH
   remote: .
   specs:
     activemessaging (0.10.0)
-      activesupport (>= 1.0.0)
+      activemessaging
+      activesupport (>= 2.3.11)
       celluloid
+      reliable-msg (~> 1.1)
 
 GEM
   remote: http://rubygems.org/
@@ -36,7 +38,7 @@ PLATFORMS
 
 DEPENDENCIES
   activemessaging!
-  activesupport (~> 2.3)
+  activesupport
   jeweler
   reliable-msg (~> 1.1)
   stomp
