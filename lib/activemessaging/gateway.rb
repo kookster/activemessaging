@@ -230,7 +230,7 @@ module ActiveMessaging
               :direction   => :incoming
             }
             begin
-              execute_filter_chain(:incoming, message, routing) do |m|
+              execute_filter_chain(:incoming, message.dup, routing) do |m|
                 result = subscription.processor_class.new.process!(m)
               end
             rescue ActiveMessaging::AbortMessageException
