@@ -2,6 +2,8 @@ require File.dirname(__FILE__) + '/test_helper'
 
 if defined?(JRUBY_VERSION)
 
+require 'activemessaging/adapters/jms'
+
 class JmsTest < Test::Unit::TestCase
 
   def setup
