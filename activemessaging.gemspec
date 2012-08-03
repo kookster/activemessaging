@@ -4,25 +4,34 @@
 # -*- encoding: utf-8 -*-
 
 Gem::Specification.new do |s|
-  s.name = %q{activemessaging}
+  s.name = "activemessaging"
   s.version = "0.10.0"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Jon Tirsen", "Andrew Kuklewicz", "Olle Jonsson", "Sylvain Perez", "Cliff Moon", "Uwe Kubosch"]
-  s.date = %q{2012-08-03}
-  s.description = %q{ActiveMessaging is an attempt to bring the simplicity and elegance of rails development to the world of messaging. Messaging, (or event-driven architecture) is widely used for enterprise integration, with frameworks such as Java's JMS, and products such as ActiveMQ, Tibco, IBM MQSeries, etc. Now supporting Rails 3 as of version 0.8.0.}
-  s.email = %q{activemessaging-discuss@googlegroups.com}
+  s.date = "2012-08-03"
+  s.description = "ActiveMessaging is an attempt to bring the simplicity and elegance of rails development to the world of messaging. Messaging, (or event-driven architecture) is widely used for enterprise integration, with frameworks such as Java's JMS, and products such as ActiveMQ, Tibco, IBM MQSeries, etc. Now supporting Rails 3 as of version 0.8.0."
+  s.email = "activemessaging-discuss@googlegroups.com"
   s.extra_rdoc_files = [
     "README.md"
   ]
   s.files = [
     ".travis.yml",
+    "Appraisals",
     "Gemfile",
     "Gemfile.lock",
     "README.md",
     "Rakefile",
     "VERSION",
     "activemessaging.gemspec",
+    "gemfiles/activesupport23.gemfile",
+    "gemfiles/activesupport23.gemfile.lock",
+    "gemfiles/activesupport30.gemfile",
+    "gemfiles/activesupport30.gemfile.lock",
+    "gemfiles/activesupport31.gemfile",
+    "gemfiles/activesupport31.gemfile.lock",
+    "gemfiles/activesupport32.gemfile",
+    "gemfiles/activesupport32.gemfile.lock",
     "generators/a13g_test_harness/a13g_test_harness_generator.rb",
     "generators/a13g_test_harness/templates/active_messaging_test.rhtml",
     "generators/a13g_test_harness/templates/active_messaging_test_controller.rb",
@@ -33,7 +42,7 @@ Gem::Specification.new do |s|
     "generators/filter/templates/filter_test.rb",
     "generators/processor/USAGE",
     "generators/processor/processor_generator.rb",
-    "generators/processor/templates/application.rb",
+    "generators/processor/templates/application_processor.rb",
     "generators/processor/templates/broker.yml",
     "generators/processor/templates/jruby_poller",
     "generators/processor/templates/messaging.rb",
@@ -98,29 +107,37 @@ Gem::Specification.new do |s|
     "test/test_helper.rb",
     "test/tracer_test.rb"
   ]
-  s.homepage = %q{http://github.com/kookster/activemessaging}
+  s.homepage = "http://github.com/kookster/activemessaging"
   s.require_paths = ["lib"]
-  s.rubygems_version = %q{1.5.2}
-  s.summary = %q{Official activemessaging gem, now hosted on github.com/kookster. (kookster prefix temporary)}
+  s.rubygems_version = "1.8.10"
+  s.summary = "Official activemessaging gem, now hosted on github.com/kookster. (kookster prefix temporary)"
 
   if s.respond_to? :specification_version then
     s.specification_version = 3
 
     if Gem::Version.new(Gem::VERSION) >= Gem::Version.new('1.2.0') then
-      s.add_runtime_dependency(%q<reliable-msg>, ["~> 1.1"])
       s.add_runtime_dependency(%q<activemessaging>, [">= 0"])
+      s.add_development_dependency(%q<reliable-msg>, ["~> 1.1"])
+      s.add_development_dependency(%q<jruby-activemq>, [">= 0"])
+      s.add_development_dependency(%q<appraisal>, [">= 0"])
       s.add_development_dependency(%q<jeweler>, [">= 0"])
       s.add_development_dependency(%q<activesupport>, [">= 0"])
+      s.add_development_dependency(%q<stomp>, [">= 0"])
+      s.add_development_dependency(%q<jeweler>, [">= 0"])
       s.add_development_dependency(%q<stomp>, [">= 0"])
       s.add_runtime_dependency(%q<activesupport>, [">= 2.3.11"])
       s.add_runtime_dependency(%q<celluloid>, [">= 0"])
       s.add_development_dependency(%q<jeweler>, [">= 0"])
       s.add_development_dependency(%q<stomp>, [">= 0"])
     else
-      s.add_dependency(%q<reliable-msg>, ["~> 1.1"])
       s.add_dependency(%q<activemessaging>, [">= 0"])
+      s.add_dependency(%q<reliable-msg>, ["~> 1.1"])
+      s.add_dependency(%q<jruby-activemq>, [">= 0"])
+      s.add_dependency(%q<appraisal>, [">= 0"])
       s.add_dependency(%q<jeweler>, [">= 0"])
       s.add_dependency(%q<activesupport>, [">= 0"])
+      s.add_dependency(%q<stomp>, [">= 0"])
+      s.add_dependency(%q<jeweler>, [">= 0"])
       s.add_dependency(%q<stomp>, [">= 0"])
       s.add_dependency(%q<activesupport>, [">= 2.3.11"])
       s.add_dependency(%q<celluloid>, [">= 0"])
@@ -128,10 +145,14 @@ Gem::Specification.new do |s|
       s.add_dependency(%q<stomp>, [">= 0"])
     end
   else
-    s.add_dependency(%q<reliable-msg>, ["~> 1.1"])
     s.add_dependency(%q<activemessaging>, [">= 0"])
+    s.add_dependency(%q<reliable-msg>, ["~> 1.1"])
+    s.add_dependency(%q<jruby-activemq>, [">= 0"])
+    s.add_dependency(%q<appraisal>, [">= 0"])
     s.add_dependency(%q<jeweler>, [">= 0"])
     s.add_dependency(%q<activesupport>, [">= 0"])
+    s.add_dependency(%q<stomp>, [">= 0"])
+    s.add_dependency(%q<jeweler>, [">= 0"])
     s.add_dependency(%q<stomp>, [">= 0"])
     s.add_dependency(%q<activesupport>, [">= 2.3.11"])
     s.add_dependency(%q<celluloid>, [">= 0"])
