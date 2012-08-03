@@ -1,5 +1,5 @@
 PATH
-  remote: .
+  remote: /Users/mcampbell/dev/vibes/activemessaging
   specs:
     activemessaging (0.10.0)
       activemessaging
@@ -41,7 +41,7 @@ PLATFORMS
 
 DEPENDENCIES
   activemessaging!
-  activesupport
+  activesupport (~> 2.3.11)
   appraisal
   jeweler
   reliable-msg (~> 1.1)

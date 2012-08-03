@@ -1,4 +1,9 @@
 language: ruby
+gemfile:
+  - gemfiles/activesupport23.gemfile
+  - gemfiles/activesupport30.gemfile
+  - gemfiles/activesupport31.gemfile
+  - gemfiles/activesupport32.gemfile
 rvm:
   - 1.8.7
   - 1.9.2
@@ -10,8 +15,6 @@ rvm:
   - jruby-head
   - rbx-18mode
   - rbx-19mode
-#jdk:
-  #- oraclejdk7
 matrix:
   allow_failures:
     - rvm: jruby-18mode
@@ -20,3 +23,18 @@ matrix:
     - rvm: rbx-18mode
     - rvm: rbx-19mode
     - rvm: ruby-head
+  exclude:
+    - rvm: 1.9.3
+      gemfile: gemfiles/activesupport23.gemfile
+    - rvm: ruby-head
+      gemfile: gemfiles/activesupport23.gemfile
+    - rvm: jruby-19mode
+      gemfile: gemfiles/activesupport23.gemfile
+    - rvm: jruby-head
+      gemfile: gemfiles/activesupport23.gemfile
+    - rvm: rbx-19mode
+      gemfile: gemfiles/activesupport23.gemfile
+notifications:
+  recipients:
+    - matt.campbell@vibes.com
+    - lance.cooper@vibes.com

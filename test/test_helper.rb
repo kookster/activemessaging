@@ -11,7 +11,7 @@ else
   
   $: << File.expand_path(File.dirname(__FILE__) + '/../lib')
   require 'rubygems'
-  require 'active_support'
+  require 'active_support/all'
 
   module ActiveMessaging
     def self.app_root
