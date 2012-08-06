@@ -3,6 +3,9 @@
 STDOUT.sync = true; STDOUT.flush
 STDERR.sync = true; STDERR.flush
 
+# The daemons gem sets our cwd to /, which Rails doesn't work well with.
+Dir.chdir APP_ROOT
+
 #Try to Load Merb
 merb_init_file = File.expand_path(File.dirname(__FILE__)+'/../config/merb_init')
 if File.exists? merb_init_file
@@ -17,8 +20,7 @@ else
   require File.join(RAILS_ROOT, 'config', 'environment')
 end
 
-# Load ActiveMessaging processors
-#ActiveMessaging::load_processors
-
 # Start it up!
-ActiveMessaging::start
+require 'activemessaging'
+ActiveMessaging.load_activemessaging
+ActiveMessaging.start

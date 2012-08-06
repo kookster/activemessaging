@@ -1,6 +1,7 @@
 if defined?(JRUBY_VERSION)
 #require 'java'
 include Java
+require 'activemq'
 
 begin
   java_import javax.naming.InitialContext

@@ -14,10 +14,7 @@ class InitializeFilter
 end
 
 class GatewayTest < Test::Unit::TestCase
-
-
   class ClassFilter
-    
     def initialize
       raise "Don't try and construct one of these please"
     end
@@ -32,6 +29,17 @@ class GatewayTest < Test::Unit::TestCase
   class ObjectFilter
     def process(message, details={})
       puts "ObjectFilter process called!"
+    end
+  end
+
+  class MessageManglingFilter
+    class << self
+      def process(message, details={})
+        message.body.upcase!
+        message.id.upcase!
+        message.headers['the-mangler'] = 'run'
+        message.destination.gsub! '/', '#'
+      end
     end
   end
 
@@ -169,6 +177,23 @@ class GatewayTest < Test::Unit::TestCase
     msg = ActiveMessaging::Adapters::Test::Message.new("message_body", nil, {}, dest.name)
     ActiveMessaging::Gateway.dispatch(msg)
     assert_equal msg, ActiveMessaging::Gateway.connection.unreceived_messages.first
+  end
+
+  def test_aborted_messages_retry_original_message
+    ActiveMessaging::Gateway.destination :hello_world, '/queue/helloWorld'
+    ActiveMessaging::Gateway.filter 'gateway_test/message_mangling_filter'
+    ActiveMessaging::Gateway.subscribe_to :hello_world, TestRetryProcessor, headers={}
+
+    message_body = "message_body"
+    message_id = "55-a-msg"
+    message_headers = { 'x-my-header' => 'value' }
+    message_destination = '/queue/helloWorld'
+    msg = ActiveMessaging::Adapters::Test::Message.new(message_body.dup, message_id.dup, message_headers.dup, message_destination.dup)
+    ActiveMessaging::Gateway.dispatch(msg)
+    assert_equal message_body, ActiveMessaging::Gateway.connection.unreceived_messages.first.body
+    assert_equal message_id, ActiveMessaging::Gateway.connection.unreceived_messages.first.id
+    assert_equal message_headers, ActiveMessaging::Gateway.connection.unreceived_messages.first.headers
+    assert_equal message_destination, ActiveMessaging::Gateway.connection.unreceived_messages.first.destination
   end
 
   def test_receive

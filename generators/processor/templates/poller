@@ -2,16 +2,16 @@
 
 ENV['APP_ROOT'] ||= File.expand_path(File.join(File.dirname(__FILE__), '..'))
 APP_ROOT = ENV['APP_ROOT']
+ENV['APP_NAME'] ||= "poller"
+APP_NAME = ENV['APP_NAME']
 script_file = File.join(APP_ROOT, 'lib', 'poller.rb')
 tmp_dir = File.join(APP_ROOT, 'tmp')
 
 require 'rubygems'
 require 'daemons'
-require 'activesupport'
-require 'activemessaging'
 
 options = {
-  :app_name   => "poller",
+  :app_name   => APP_NAME,
   :dir_mode   => :normal,
   :dir        => tmp_dir,
   :multiple   => true,
