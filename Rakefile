@@ -41,6 +41,7 @@ begin
 
     gemspec.add_development_dependency('jeweler')
     gemspec.add_development_dependency('stomp')
+    gemspec.add_development_dependency('appraisal')
     #gemspec.add_development_dependency('reliable-msg')
 
   end
