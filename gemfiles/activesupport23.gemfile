@@ -2,9 +2,6 @@
 
 source "http://rubygems.org"
 
-gem "reliable-msg", "~>1.1", :platform=>:ruby
-gem "jruby-activemq", :platform=>:jruby
-gem "appraisal"
 gem "activesupport", "~> 2.3.11"
 
-gemspec :path=>"../"
+gemspec :path=>"../", :development_group=>:test

@@ -5,7 +5,6 @@ PATH
       activemessaging
       activesupport (>= 2.3.11)
       celluloid
-      reliable-msg (~> 1.1)
 
 GEM
   remote: http://rubygems.org/
@@ -48,7 +47,6 @@ PLATFORMS
 
 DEPENDENCIES
   activemessaging!
-  activesupport
   appraisal
   jeweler
   jruby-activemq
