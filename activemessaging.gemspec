@@ -5,7 +5,7 @@
 
 Gem::Specification.new do |s|
   s.name = "activemessaging"
-  s.version = "0.11.0"
+  s.version = "0.12.0"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Jon Tirsen", "Andrew Kuklewicz", "Olle Jonsson", "Sylvain Perez", "Cliff Moon", "Uwe Kubosch", "Lance Cooper", "Matt Campbell"]
