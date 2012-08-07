@@ -1,5 +1,5 @@
 PATH
-  remote: .
+  remote: /Users/LCooper/src/activemessaging
   specs:
     activemessaging (0.10.0)
       activemessaging
@@ -47,6 +47,7 @@ PLATFORMS
 
 DEPENDENCIES
   activemessaging!
+  activesupport (~> 3.2.2)
   appraisal
   jeweler
   jruby-activemq

@@ -3,7 +3,7 @@
 
 # This owes no small debt to sidekiq for showing how to use celluloid for polling for messages.
 # https://github.com/mperham/sidekiq/blob/poller/lib/sidekiq/manager.rb
-
+if RUBY_VERSION.to_f >= 1.9 # Celluloid requires fibers support, which is not available on 1.8
 require 'celluloid'
 
 module ActiveMessaging
@@ -206,3 +206,4 @@ module ActiveMessaging
   end
 
 end
+end # if RUBY_VERSION

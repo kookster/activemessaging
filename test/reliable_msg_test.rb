@@ -1,6 +1,4 @@
 require File.dirname(__FILE__) + '/test_helper'
-require 'activemessaging/adapters/reliable_msg'
-
 loaded = true
 begin
   require 'reliable-msg'
@@ -8,6 +6,8 @@ rescue Object => e
   loaded = false
 end
 if loaded 
+
+require 'activemessaging/adapters/reliable_msg'
 
 class ReliableMsgTest < Test::Unit::TestCase
 

@@ -60,6 +60,18 @@ class StompTest < Test::Unit::TestCase
     @connection.stomp_connection.receive = @message
   end
 
+  def sent_command
+    @connection.stomp_connection.socket.sent_messages[0]
+  end
+
+  def sent_headers
+    @connection.stomp_connection.socket.sent_messages.drop(1).take_while { |line| !line.empty? }
+  end
+
+  def sent_body
+    (@connection.stomp_connection.socket.sent_messages.drop_while {|line| !line.empty?}).drop(1).first
+  end
+
   def test_initialize
     i = { :retryMax => 4, 
           :deadLetterQueue=>'/queue/dlq',
@@ -81,34 +93,35 @@ class StompTest < Test::Unit::TestCase
 
   def test_disconnect
     @connection.disconnect
-    assert_equal "DISCONNECT", @connection.stomp_connection.socket.sent_messages[0]
+    assert_equal "DISCONNECT", sent_command
   end
 
   def test_subscribe
     @connection.subscribe @d, {}
-    assert_equal "SUBSCRIBE", @connection.stomp_connection.socket.sent_messages[0]
-    # assert_equal "content-length:0", @connection.stomp_connection.socket.sent_messages[1]
-    assert_equal "destination:#{@d}", @connection.stomp_connection.socket.sent_messages[1]
+    assert_equal "SUBSCRIBE", sent_command
+    assert sent_headers.include?("content-length:0"), "No content-length header was sent"
+    assert sent_headers.include?("destination:#{@d}"), "No destination header was sent"
     assert_equal 1, @connection.stomp_connection.subscriptions.count
-    assert_equal({'content-length'=>'0', :destination=>@d}, @connection.stomp_connection.subscriptions[@d])
+    assert_equal({:'content-type'=>'text/plain; charset=UTF-8', :'content-length'=>'0', :destination=>@d}, @connection.stomp_connection.subscriptions[@d])
   end
 
   def test_unsubscribe
     @connection.subscribe @d, {}
     @connection.stomp_connection.socket.sent_messages = []
     @connection.unsubscribe @d, {}
-    assert_equal "UNSUBSCRIBE", @connection.stomp_connection.socket.sent_messages[0]
-    # assert_equal "content-length:0", @connection.stomp_connection.socket.sent_messages[1]
-    assert_equal "destination:#{@d}", @connection.stomp_connection.socket.sent_messages[1]
+    assert_equal "UNSUBSCRIBE", sent_command
+    assert sent_headers.include?("content-length:0"), "No content-length header was sent"
+    assert sent_headers.include?("destination:#{@d}"), "No destination header was sent"
     assert_equal 0, @connection.stomp_connection.subscriptions.count
   end
   
   def test_send
     @connection.send(@d, @message, {})
-    assert_equal 'SEND', @connection.stomp_connection.socket.sent_messages[0]
-    # assert_equal "content-length:#{@message.length}", @connection.stomp_connection.socket.sent_messages[1]
-    assert_equal "destination:#{@d}", @connection.stomp_connection.socket.sent_messages[1]
-    assert_equal @message, @connection.stomp_connection.socket.sent_messages[5]
+    assert_equal 'SEND', sent_command
+    assert sent_headers.include?("content-length:#{@message.length}"), "No content-length header was sent"
+    assert sent_headers.include?("destination:#{@d}"), "No destination header was sent"
+#    assert_equal @message, @connection.stomp_connection.socket.sent_messages[5]
+    assert_equal @message, sent_body
   end
 
   def test_receive
