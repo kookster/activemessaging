@@ -1,0 +1,42 @@
+PATH
+  remote: .
+  specs:
+    activemessaging (0.10.0)
+      activesupport (>= 1.0.0)
+      celluloid
+
+GEM
+  remote: http://rubygems.org/
+  specs:
+    activesupport (2.3.14)
+    celluloid (0.11.1)
+      timers (>= 1.0.0)
+    git (1.2.5)
+    jeweler (1.8.4)
+      bundler (~> 1.0)
+      git (>= 1.2.5)
+      rake
+      rdoc
+    json (1.7.4)
+    macaddr (1.6.1)
+      systemu (~> 2.5.0)
+    rake (0.9.2.2)
+    rdoc (3.12)
+      json (~> 1.4)
+    reliable-msg (1.1.0)
+      uuid (>= 1.0.0)
+    stomp (1.2.4)
+    systemu (2.5.2)
+    timers (1.0.1)
+    uuid (2.3.5)
+      macaddr (~> 1.0)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  activemessaging!
+  activesupport (~> 2.3)
+  jeweler
+  reliable-msg (~> 1.1)
+  stomp
