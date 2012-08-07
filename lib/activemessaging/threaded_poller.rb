@@ -73,9 +73,16 @@ module ActiveMessaging
       # indicates to all busy workers not to pick up another messages, but does not interrupt
       # also indicates to the message receiver to stop getting more messages 
       self.running = false
-      
+
       # tell each waiting worker to shut down.  Running ones will be allowed to finish
-      workers.each { |w| w.terminate if w.alive? }
+      receiver.terminate! if receiver.alive?
+      logger.info "ActiveMessaging::ThreadedPoller receiver terminated"
+
+      workers.each { |w| w.terminate! if w.alive? }
+      logger.info "ActiveMessaging::ThreadedPoller workers terminated"
+
+
+      after(0) { signal(:shutdown) } if stopped?
     end
 
     # recursive method, uses celluloid 'after' to keep calling 
@@ -105,16 +112,16 @@ module ActiveMessaging
         worker.terminate if worker.alive?
         if busy.empty?
           logger.info "all executed: signal stopped"
-          self.terminate if alive?
+          after(0) { signal(:shutdown) }
         end
       end
     end
 
     def died(worker, reason)
-      logger.info "uh oh, #{worker.inspect} died because of #{reason.class}"
       busy.delete(worker)
 
       if running
+        logger.info "uh oh, #{worker.inspect} died because of #{reason.class}"
         worker = Worker.new_link(current_actor)
         workers << worker
         receive(worker)
@@ -122,13 +129,13 @@ module ActiveMessaging
         logger.info "check to see if busy is empty: #{busy.inspect}"
         if busy.empty?
           logger.info "all died: signal stopped"
-          after(0){ self.terminate } if alive?
+          after(0){ signal(:shutdown) }
         end
       end
     end
     
     def stopped?
-      !alive? || (!running && busy.empty?)
+      (!running && busy.empty?)
     end
 
     def logger; ActiveMessaging.logger; end
@@ -153,20 +160,25 @@ module ActiveMessaging
     def receive(worker)
       return unless poller.running
 
+      # logger.debug("***** MessageReceiver calling receive")
       message = self.connection.receive(worker.options)
+      # logger.debug("***** MessageReceiver receive returned")
 
       if message
         logger.debug("ActiveMessaging::MessageReceiver.receive: message:'#{message.inspect}'")
         poller.dispatch!(message, worker)
       else
-        self.terminate if !poller.running && alive?  
+        if (!poller || !poller.alive? || !poller.running)
+          logger.debug("ActiveMessaging::MessageReceiver.receive: terminate")
+          self.terminate
+        end
         logger.debug("ActiveMessaging::MessageReceiver.receive: no message, retry in #{pause} sec")
         after(pause) { receive(worker) }
       end
       
     end
 
-    def logger; ActiveMessaging.logger; end
+    def logger; ::ActiveMessaging.logger; end
   end
 
   class Worker
@@ -180,11 +192,16 @@ module ActiveMessaging
     end
 
     def execute(message)
-      ActiveMessaging::Gateway.dispatch(message)
+      begin
+        ::ActiveMessaging::Gateway.dispatch(message)
+      ensure
+        ::ActiveRecord::Base.clear_active_connections! if defined?(::ActiveRecord)
+      end
+
       poller.executed!(current_actor)
     end
 
-    def logger; ActiveMessaging.logger; end
+    def logger; ::ActiveMessaging.logger; end
     
   end
 

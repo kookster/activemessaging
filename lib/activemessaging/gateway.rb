@@ -49,8 +49,12 @@ module ActiveMessaging
                   @guard.synchronize {
                     dispatch Thread.current[:message]
                   }
+                  Thread.current[:message] = nil
+                else
+                  # if there is no message at all, sleep
+                  # maybe this should be configurable
+                  sleep(1)
                 end
-                Thread.current[:message] = nil
               end
               Thread.pass
             end
@@ -63,7 +67,7 @@ module ActiveMessaging
           living = false
           @connection_threads.each { |name, thread| living ||=  thread.alive? }
           @running = living
-          sleep 1
+          sleep(1)
         end
         ActiveMessaging.logger.error "All connection threads have died..."
       rescue Interrupt

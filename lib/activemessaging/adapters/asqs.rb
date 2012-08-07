@@ -95,6 +95,20 @@ module ActiveMessaging
           send_messsage queue, message_body
         end
 
+        # def receive(options={})
+        #   while true
+        #     # this will try all the queues once, by priority
+        #     # returns nil if nothing there
+        #     message = receive_message(options)
+
+        #     if message
+        #       return message
+        #     else
+        #       sleep(poll_interval)
+        #     end
+        #   end
+        # end
+
         #  new receive respects priorities
         def receive(options={})
           message = nil
