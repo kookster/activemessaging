@@ -4,7 +4,7 @@ module ActiveMessaging
     source_root File.expand_path("../templates", __FILE__)
 
     # check_class_collision :suffix=>"Processor"
-    
+ 
     def copy_processor
       template "processor.rb", "app/processors/#{file_name}_processor.rb"
     end

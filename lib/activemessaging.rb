@@ -65,9 +65,15 @@ module ActiveMessaging
   end
 
   def self.load_config
+    # Skip loading config if there are no custom processors as the generator 
+    # is likely running since application_processor.rb and another processor
+    # should exist when running rails. 
+    if Dir["#{app_root}/app/processors/*.rb"].size() <= 1
+	return
+    end
     path = File.expand_path("#{app_root}/config/messaging.rb")
     begin
-      load path
+      load path 
     rescue
       raise $!, " ActiveMessaging: problems trying to load '#{path}': \n\t#{$!.message}"
     end
