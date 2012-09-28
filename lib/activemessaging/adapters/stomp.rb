@@ -28,7 +28,7 @@ module ActiveMessaging
           @configuration = cfg
 
           # create a new stomp connection
-          connect_headers = {}
+          connect_headers = cfg[:connect_headers] || {}
           connect_headers['client-id'] = cfg[:clientId] if cfg[:clientId]
           @stomp_connection = ::Stomp::Connection.new(cfg[:login],cfg[:passcode],cfg[:host],cfg[:port].to_i,cfg[:reliable],cfg[:reconnectDelay], connect_headers)
         end
