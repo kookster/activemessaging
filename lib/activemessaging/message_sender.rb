@@ -8,21 +8,21 @@ module ActiveMessaging
     def self.included(included_by)
       class << included_by
         def publishes_to destination_name
-          Gateway.find_destination destination_name
+          ActiveMessaging::Gateway.find_destination(destination_name)
         end
 
         def receives_from destination_name
-          Gateway.find_destination destination_name
+          ActiveMessaging::Gateway.find_destination(destination_name)
         end
       end
     end
 
     def publish destination_name, message, headers={}, timeout=10
-      Gateway.publish(destination_name, message, self.class, headers, timeout)
+      ActiveMessaging::Gateway.publish(destination_name, message, self.class, headers, timeout)
     end
 
     def receive destination_name, headers={}, timeout=10
-      Gateway.receive(destination_name, self.class, headers, timeout)
+      ActiveMessaging::Gateway.receive(destination_name, self.class, headers, timeout)
     end
 
   end
