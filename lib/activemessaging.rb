@@ -14,12 +14,12 @@ module ActiveMessaging
   class StopProcessingException < Interrupt #:nodoc:
   end
 
-  # Used to indicate that the processing on a message should cease, 
+  # Used to indicate that the processing on a message should cease,
   # and the message should be returned back to the broker as best it can be
   class AbortMessageException < Exception #:nodoc:
   end
 
-  # Used to indicate that the processing on a message should cease, 
+  # Used to indicate that the processing on a message should cease,
   # but no further action is required
   class StopFilterException < Exception #:nodoc:
   end
@@ -46,15 +46,14 @@ module ActiveMessaging
   def self.load_extensions
     require 'logger'
     require 'activemessaging/gateway'
-    require 'activemessaging/threaded_poller'
     require 'activemessaging/adapter'
     require 'activemessaging/message_sender'
     require 'activemessaging/processor'
     require 'activemessaging/filter'
     require 'activemessaging/trace_filter'
 
-    # load all under the adapters dir 
-    Dir[File.join(ROOT, 'lib', 'activemessaging', 'adapters', '*.rb')].each do |a| 
+    # load all under the adapters dir
+    Dir[File.join(ROOT, 'lib', 'activemessaging', 'adapters', '*.rb')].each do |a|
       begin
         adapter_name = File.basename(a, ".rb")
         require 'activemessaging/adapters/' + adapter_name
@@ -106,7 +105,7 @@ module ActiveMessaging
       err_msg = <<-EOM
 
       ActiveMessaging Error: No subscriptions.
-      
+
       If you have no processor classes in app/processors, add them using the command:
         script/generate processor DoSomething"
 
