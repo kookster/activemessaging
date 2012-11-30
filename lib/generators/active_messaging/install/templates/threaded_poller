@@ -26,6 +26,7 @@ Dir["#{lib_path}/**/*.rb"].each {|file| require file unless file.match(/poller\.
 # require and load activemessaging
 require 'activemessaging'
 ActiveMessaging.load_activemessaging
+require 'activemessaging/threaded_poller'
 
 # configure the connection (there can be multiple defined in broker.yml) and number of threads
 connection_name = 'default'
