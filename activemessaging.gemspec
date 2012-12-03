@@ -111,25 +111,26 @@ Gem::Specification.new do |s|
   s.require_paths = ["lib"]
   s.rubygems_version = "1.8.22"
   s.summary = "Official activemessaging gem, now hosted on github.com/kookster. (kookster prefix temporary)"
-
+  
+  # Having activemessaging > 0 is blocking gem from installing it.
   if s.respond_to? :specification_version then
     s.specification_version = 3
 
     if Gem::Version.new(Gem::VERSION) >= Gem::Version.new('1.2.0') then
-      s.add_runtime_dependency(%q<activemessaging>, [">= 0"])
+      #s.add_runtime_dependency(%q<activemessaging>, [">= 0"])
       s.add_runtime_dependency(%q<activesupport>, [">= 2.3.11"])
       s.add_development_dependency(%q<jeweler>, [">= 0"])
       s.add_development_dependency(%q<stomp>, [">= 0"])
       s.add_development_dependency(%q<appraisal>, [">= 0"])
     else
-      s.add_dependency(%q<activemessaging>, [">= 0"])
+      #s.add_dependency(%q<activemessaging>, [">= 0"])
       s.add_dependency(%q<activesupport>, [">= 2.3.11"])
       s.add_dependency(%q<jeweler>, [">= 0"])
       s.add_dependency(%q<stomp>, [">= 0"])
       s.add_dependency(%q<appraisal>, [">= 0"])
     end
   else
-    s.add_dependency(%q<activemessaging>, [">= 0"])
+    #s.add_dependency(%q<activemessaging>, [">= 0"])
     s.add_dependency(%q<activesupport>, [">= 2.3.11"])
     s.add_dependency(%q<jeweler>, [">= 0"])
     s.add_dependency(%q<stomp>, [">= 0"])
