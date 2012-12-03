@@ -13,6 +13,12 @@ Here's a sample of a processor class that handles incoming messages:
     	end
     end
 
+# Generating with Rails 3
+
+After adding ActiveMessaging to your Gemfile and executing bundle install, run the following commands:
+
+rails g active_messaging:install  
+rails g active_messaging:processor <NameOfYourProcessor>
 
 # Support
 
