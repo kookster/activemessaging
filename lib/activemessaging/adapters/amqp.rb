@@ -61,7 +61,7 @@ module ActiveMessaging
 
           @queue_config = DEFAULT_QUEUE_CONFIG
           unless @auto_generated_queue
-            @queue_config.merge({
+            @queue_config.merge!({
               :durable     => !!config[:queue_durable],
               :auto_delete => !!config[:queue_auto_delete],
               :exclusive   => !!config[:queue_exclusive]
