@@ -15,7 +15,7 @@ module ActiveMessaging
     # traps when any worker dies
     trap_exit :died
 
-    attr_accessor :configuration, :receiver, :connection, :workers, :busy, :running
+    attr_accessor :configuration, :receiver, :connection, :workers, :busy, :running, :pause
 
     # 
     # connection is a string, name of the connection from broker.yml to use for this threaded poller instance
@@ -34,6 +34,7 @@ module ActiveMessaging
       # default config is a pool size of 3 worker threads
       self.configuration = configuration || [{:pool_size => 3}]
       self.connection = connection
+      self.pause = 1
     end
 
     def start
@@ -54,7 +55,7 @@ module ActiveMessaging
       
       # create a message receiver actor, ony need one, using connection
       receiver_connection = ActiveMessaging::Gateway.connection(connection)
-      self.receiver = MessageReceiver.new(current_actor, receiver_connection)
+      self.receiver = MessageReceiver.new(current_actor, receiver_connection, pause)
       
       # start the workers based on the config
       configuration.each do |c|
@@ -172,7 +173,7 @@ module ActiveMessaging
           logger.debug("ActiveMessaging::MessageReceiver.receive: terminate")
           self.terminate
         end
-        logger.debug("ActiveMessaging::MessageReceiver.receive: no message, retry in #{pause} sec")
+        logger.debug("ActiveMessaging::MessageReceiver.receive: no message for worker #{worker.object_id}, retry in #{pause} sec")
         after(pause) { receive(worker) }
       end
       
@@ -194,6 +195,9 @@ module ActiveMessaging
     def execute(message)
       begin
         ::ActiveMessaging::Gateway.dispatch(message)
+      rescue Object => err
+        logger.error("ActiveMessaging::Worker.execute error - #{err.inspect}")
+        abort(err)
       ensure
         ::ActiveRecord::Base.clear_active_connections! if defined?(::ActiveRecord)
       end
