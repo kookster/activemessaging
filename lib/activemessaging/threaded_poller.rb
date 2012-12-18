@@ -1,6 +1,3 @@
-# still working on prioritized worker requests
-
-
 # This owes no small debt to sidekiq for showing how to use celluloid for polling for messages.
 # https://github.com/mperham/sidekiq/blob/poller/lib/sidekiq/manager.rb
 if RUBY_VERSION.to_f >= 1.9 # Celluloid requires fibers support, which is not available on 1.8
@@ -139,6 +136,14 @@ module ActiveMessaging
       (!running && busy.empty?)
     end
 
+    def inspect
+      "#<ThreadedPoller #{to_s}>"
+    end
+
+    def to_s
+      @str ||= "#{Process.pid}-#{Thread.current.object_id}:#{self.object_id}"
+    end
+
     def logger; ActiveMessaging.logger; end
 
   end
@@ -179,6 +184,14 @@ module ActiveMessaging
       
     end
 
+    def inspect
+      "#<MessageReceiver #{to_s}>"
+    end
+
+    def to_s
+      @str ||= "#{Process.pid}-#{Thread.current.object_id}:#{self.object_id}"
+    end
+
     def logger; ::ActiveMessaging.logger; end
   end
 
@@ -203,6 +216,14 @@ module ActiveMessaging
       end
 
       poller.executed!(current_actor)
+    end
+
+    def inspect
+      "#<Worker #{to_s}>"
+    end
+
+    def to_s
+      @str ||= "#{Process.pid}-#{Thread.current.object_id}:#{self.object_id}"
     end
 
     def logger; ::ActiveMessaging.logger; end

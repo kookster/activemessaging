@@ -1,7 +1,7 @@
 PATH
-  remote: /Users/LCooper/src/activemessaging
+  remote: ..
   specs:
-    activemessaging (0.10.0)
+    activemessaging (0.12.1)
       activemessaging
       activesupport (>= 2.3.11)
       celluloid
