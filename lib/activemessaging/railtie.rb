@@ -17,6 +17,10 @@ module ActiveMessaging
       end
 
     end
+
+    rake_tasks do
+      load "tasks/start_consumers.rake"
+    end
     
   end
 end
