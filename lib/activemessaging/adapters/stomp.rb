@@ -80,10 +80,19 @@ module ActiveMessaging
       
         def received message, headers={}
           #check to see if the ack mode for this subscription is auto or client
-          # if the ack mode is client, send an ack
-          if (headers[:ack] === 'client')
+          # if the ack mode is client or client-individual, send an ack
+          if (headers[:ack] === 'client' || headers[:ack] === 'client-individual')
             ack_headers = message.headers.has_key?(:transaction) ? { :transaction=>message.headers[:transaction]} : {}
-            @stomp_connection.ack(message.headers['message-id'], ack_headers)
+            # All 3 protocol levels have unique ACK requirements.
+            case @stomp_connection.protocol
+              when ::Stomp::SPL_10
+                @stomp_connection.ack(message.headers['message-id'], ack_headers)
+              when ::Stomp::SPL_11
+                ack_headers['subscription'] = message.headers['subscription']
+                @stomp_connection.ack(message.headers['message-id'], ack_headers)
+              else # avoid ::Stomp::SPL_12 constant when using older Stomp gems
+                @stomp_connection.ack(message.headers['ack'], ack_headers)
+            end
           end
         end
         
