@@ -1,3 +1,22 @@
+# -*- encoding: utf-8 -*-
+
+require 'simplecov'
+require 'coveralls'
+
+SimpleCov.command_name 'Unit Tests'
+SimpleCov.formatter = SimpleCov::Formatter::MultiFormatter[
+  SimpleCov::Formatter::HTMLFormatter,
+  Coveralls::SimpleCov::Formatter
+]
+SimpleCov.start
+
+require 'minitest/autorun'
+require 'minitest/spec'
+require 'minitest/mock'
+require 'webmock/minitest'
+
+# require 'activemessaging'
+
 rails_environtment_file = File.expand_path(File.dirname(__FILE__) + "/../../../../config/environment")
 
 if File.exists? rails_environtment_file
@@ -29,8 +48,5 @@ else
   require 'activemessaging/filter'
   require 'activemessaging/adapters/test'
 end
-  
-# load other libraries
-require 'test/unit'
 
 require File.dirname(__FILE__) + '/../lib/activemessaging/test_helper'

@@ -1,4 +1,5 @@
-require File.dirname(__FILE__) + '/test_helper'
+require "#{File.dirname(__FILE__)}/test_helper"
+
 require 'activemessaging/filter'
 
 module ActiveMessaging #:nodoc:
@@ -6,12 +7,12 @@ module ActiveMessaging #:nodoc:
   end
 end
 
-class FilterTest < Test::Unit::TestCase
+class FilterTest < Minitest::Test
   
   class MockFilter < ActiveMessaging::Filter
-    
-    @@called = {}
+
     cattr_reader :called
+    @@called = {}
 
     attr_reader :options
     
@@ -23,37 +24,36 @@ class FilterTest < Test::Unit::TestCase
       @@called[options[:name]] = {:message=>message, :details=>details}
     end
     
-    class << self
-      include Test::Unit::Assertions
+    class<<self
 
       def reset
         @@called = {}
       end
       
       def assert_was_called(name=nil)
-        assert @@called.has_key?(name)
+        raise unless @@called.has_key?(name)
       end
 
       def assert_was_not_called(name=nil)
-        assert !@@called.has_key?(name)
+        raise if @@called.has_key?(name)
       end
 
       def assert_routing(name, routing)
-        assert_equal routing, @@called[name][:details]
+        raise unless routing == @@called[name][:details]
       end
     end
   end
 
   class TestProcessor < ActiveMessaging::Processor
+
     include ActiveMessaging::MessageSender
     #subscribes_to :testqueue
     
     @@was_called = false
     class<<self
-      include Test::Unit::Assertions
-      
+
       def assert_was_called
-        assert @@was_called
+        raise unless @@was_called
         @@was_called = false
       end
     end

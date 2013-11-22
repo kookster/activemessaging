@@ -20,7 +20,7 @@ class FakeMessage < ActiveMessaging::BaseMessage
   end
 end
 
-class TracerTest < Test::Unit::TestCase
+class TracerTest < Minitest::Test
   include ActiveMessaging::TestHelper
 
   def setup

@@ -1,4 +1,4 @@
-require 'test/unit'
+require 'minitest'
 #require "#{File.dirname(__FILE__)}/trace_filter"
 
 

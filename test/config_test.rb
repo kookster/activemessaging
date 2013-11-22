@@ -3,7 +3,7 @@ require File.dirname(__FILE__) + '/test_helper'
 class TestProcessor < ActiveMessaging::Processor
 end
 
-class ConfigTest < Test::Unit::TestCase
+class ConfigTest < Minitest::Test
 
   def setup
     ActiveMessaging::Gateway.define do |s|

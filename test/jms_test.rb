@@ -4,7 +4,7 @@ if defined?(JRUBY_VERSION)
 
 require 'activemessaging/adapters/jms'
 
-class JmsTest < Test::Unit::TestCase
+class JmsTest < Minitest::Test
 
   def setup
     @test_txt = 'Yo Homie!'

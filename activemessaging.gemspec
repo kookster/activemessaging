@@ -21,21 +21,17 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency 'activesupport'
   spec.add_runtime_dependency 'celluloid'
 
-  spec.add_development_dependency "bundler", "~> 1.3"
-  spec.add_development_dependency "rake"
+  spec.add_development_dependency 'bundler', '~> 1.3'
+  spec.add_development_dependency 'rake'
 
-  # # stomp
-  # spec.add_development_dependency 'stomp'
+  spec.add_development_dependency 'minitest'
+  spec.add_development_dependency 'webmock'
+  spec.add_development_dependency 'pry'
 
-  # # amqp
-  # spec.add_development_dependency 'carrot'
-  # spec.add_development_dependency 'bert'
-  # spec.add_development_dependency 'emissary'
+  spec.add_development_dependency 'guard'
+  spec.add_development_dependency 'guard-bundler'
+  spec.add_development_dependency 'guard-minitest'
 
-  # # bean-stalk
-  # spec.add_development_dependency 'beanstalk-client'
-
-  # # wmq
-  # spec.add_development_dependency 'rubywmq'
-
+  spec.add_development_dependency 'simplecov'
+  spec.add_development_dependency 'coveralls'
 end

@@ -25,3 +25,18 @@ rails g active_messaging:processor <NameOfYourProcessor>
 Best bet is the google groups mailing list:
 
 http://groups.google.com/group/activemessaging-discuss
+
+
+stomp
+gem 'stomp'
+
+amqp
+'carrot'
+'bert'
+'emissary'
+
+beanstalk
+'beanstalk-client'
+
+wmq
+'rubywmq'
