@@ -1,4 +1,7 @@
 language: ruby
+branches:
+  only:
+    - rails_4
 rvm:
   - 1.9.3
   - 2.0.0
