@@ -201,6 +201,8 @@ module ActiveMessaging
       end
 
       def prepare_application
+        return unless defined?(ActiveRecord)
+
         if ActiveRecord::VERSION::MAJOR >= 4
           ActiveRecord::Base.connection_pool.connections.map(&:verify!)
         else
