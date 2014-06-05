@@ -13,4 +13,7 @@ end
 gem 'jruby-activemq', :group => :test, :platform => :jruby
 gem 'appraisal', :group => :test
 
+gem 'jeweler', :group => :development
+
+
 gemspec :development_group => :test
