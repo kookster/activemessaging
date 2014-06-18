@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    activemessaging (0.12.2)
+    activemessaging (0.13.0)
       activemessaging
       activesupport (>= 2.3.11)
 
