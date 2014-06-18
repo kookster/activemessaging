@@ -18,14 +18,13 @@ module ActiveMessaging
         register :asqs
 
         QUEUE_NAME_LENGTH    = 1..80
-        MESSAGE_SIZE         = 1..(8 * 1024)
         VISIBILITY_TIMEOUT   = 0..(24 * 60 * 60)
         NUMBER_OF_MESSAGES   = 1..255
         GET_QUEUE_ATTRIBUTES = ['All', 'ApproximateNumberOfMessages', 'VisibilityTimeout']
         SET_QUEUE_ATTRIBUTES = ['VisibilityTimeout']
 
         #configurable params
-        attr_accessor :reconnectDelay, :access_key_id, :secret_access_key, :aws_version, :content_type, :host, :port, :poll_interval, :cache_queue_list
+        attr_accessor :reconnect_delay, :access_key_id, :secret_access_key, :aws_version, :content_type, :host, :port, :poll_interval, :cache_queue_list, :max_message_size
       
         #generic init method needed by a13g
         def initialize cfg
@@ -43,6 +42,9 @@ module ActiveMessaging
           @protocol = cfg[:protocol]                      || 'http'
           @poll_interval = cfg[:poll_interval]            || 1
           @reconnect_delay = cfg[:reconnectDelay]         || 5
+
+          @max_message_size = cfg[:max_message_size].to_i > 0 ? cfg[:max_message_size].to_i : 8
+
           @aws_url="#{@protocol}://#{@host}"
 
           @cache_queue_list = cfg[:cache_queue_list].nil? ? true : cfg[:cache_queue_list]
@@ -351,7 +353,11 @@ module ActiveMessaging
 
         def validate_message m
           raise "Message cannot be nil." if m.nil?
-          raise "Message length, #{m.length}, must be between #{MESSAGE_SIZE.min} and #{MESSAGE_SIZE.max}." unless MESSAGE_SIZE.include?(m.length)
+          raise "Message length, #{m.length}, must be between #{message_size_range.min} and #{message_size_range.max}." unless message_size_range.include?(m.length)
+        end
+
+        def message_size_range
+          @_message_size_range ||= 1..(max_message_size * 1024)
         end
 
         def validate_timeout to

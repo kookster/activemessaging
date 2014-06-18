@@ -102,6 +102,7 @@ development:
     # content_type: text/plain
     # poll_interval: 1
     # cache_queue_list: true
+    # max_message_size: 8
 
 
     ########################################
