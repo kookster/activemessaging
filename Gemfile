@@ -4,7 +4,8 @@ source "https://rubygems.org"
 # pulls in this group, Jeweler does not include it when consulting the
 # Gemfile for dependencies.
 # The short syntax isn't used because the appraisal gem does not support it.
-if RUBY_VERSION < '1.9'
+require 'rubygems'
+if Gem::Version.new(RUBY_VERSION.dup) < Gem::Version.new('1.9.0')
   gem 'reliable-msg', '~>1.1', :group => :test, :platform => :ruby
 else
   gem 'celluloid', '~>0.12', :group => :test, :platform => :ruby
