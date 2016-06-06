@@ -36,5 +36,4 @@ matrix:
       gemfile: gemfiles/activesupport23.gemfile
 notifications:
   recipients:
-    - matt.campbell@vibes.com
-    - lance.cooper@vibes.com
+    - kookster@gmail.com
