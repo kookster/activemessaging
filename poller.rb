@@ -3,12 +3,7 @@
 STDOUT.sync = true; STDOUT.flush
 STDERR.sync = true; STDERR.flush
 
-# Load Rails
-RAILS_ROOT=File.expand_path(File.join(File.dirname(__FILE__), '..','..','..'))
-load File.join(RAILS_ROOT, 'config', 'environment.rb')
-
-# Load ActiveMessaging processors
-#ActiveMessaging::load_processors
+load File.join(Rails.root, 'config', 'environment.rb')
 
 # Start it up!
 ActiveMessaging::start

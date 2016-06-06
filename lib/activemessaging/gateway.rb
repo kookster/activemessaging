@@ -346,24 +346,20 @@ module ActiveMessaging
       end
 
       def current_processor_group
-        if ARGV.length > 0 && !@current_processor_group
-          ARGV.each {|arg|
-            pair = arg.split('=')
-            if pair[0] == 'process-group'
-              group_sym = pair[1].to_sym
-              if processor_groups.has_key? group_sym
-                @current_processor_group = group_sym
-              else
-                ActiveMessaging.logger.error "Unrecognized process-group."
-                ActiveMessaging.logger.error "You specified process-group #{pair[1]}, make sure this is specified in config/messaging.rb"
-                ActiveMessaging.logger.error "  ActiveMessaging::Gateway.define do |s|"
-                ActiveMessaging.logger.error "    s.processor_groups = { :group1 => [:foo_bar1_processor], :group2 => [:foo_bar2_processor] }"
-                ActiveMessaging.logger.error "  end"
-                exit
-              end
-            end
-          }
+        if ENV['PROCESS_GROUP'].present? && !@current_processor_group
+          group_sym = ENV['PROCESS_GROUP'].to_sym
+          if processor_groups.has_key? group_sym
+            @current_processor_group = group_sym
+          else
+            ActiveMessaging.logger.error "Unrecognized process-group."
+            ActiveMessaging.logger.error "You specified process-group #{pair[1]}, make sure this is specified in config/messaging.rb"
+            ActiveMessaging.logger.error "  ActiveMessaging::Gateway.define do |s|"
+            ActiveMessaging.logger.error "    s.processor_groups = { :group1 => [:foo_bar1_processor], :group2 => [:foo_bar2_processor] }"
+            ActiveMessaging.logger.error "  end"
+            exit
+          end
         end
+
         @current_processor_group
       end
 
