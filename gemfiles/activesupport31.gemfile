@@ -2,9 +2,8 @@
 
 source "https://rubygems.org"
 
-gem "jruby-activemq", :group => :test, :platform => :jruby
-gem "appraisal", "~>2.1.0", :group => :test
 gem "activesupport", "~> 3.1.2"
 gem "i18n"
+gem "rake", "~> 11.1.2"
 
 gemspec :development_group => :test, :path => "../"
