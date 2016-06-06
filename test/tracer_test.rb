@@ -30,7 +30,7 @@ class TracerTest < Test::Unit::TestCase
 
       s.filter :trace_filter, :queue=>:trace
     end
-    
+
     TestProcessor.subscribes_to :hello_world
     TestSender.publishes_to :hello_world
   end
@@ -44,7 +44,7 @@ class TracerTest < Test::Unit::TestCase
 
     sender = TestSender.new
     sender.publish :hello_world, message
-    
+
     assert_message :trace, "<sent><from>TestSender</from><queue>hello_world</queue><message>#{message}</message></sent>"
     assert_message :hello_world, message
   end

@@ -21,14 +21,14 @@ end
 
 module Stomp
   class Connection
-    
+
     attr_accessor :subscriptions
-    
+
     def socket
       @socket = FakeTCPSocket.new if @socket.nil?
       @socket
     end
-    
+
     def receive=(msg)
       # stomp 1.0.5 code, now no longer works
       # sm = Stomp::Message.new do |m|
@@ -36,15 +36,15 @@ module Stomp
       #   m.body = msg
       #   m.headers = {'message-id'=>'testmessage1', 'content-length'=>msg.length, 'destination'=>'destination1'}
       # end
-      
+
       sm = Stomp::Message.new("MESSAGE\ndestination:/queue/stomp/destination/1\nmessage-id: messageid1\ncontent-length:#{msg.length}\n\n#{msg}\0\n")
-      
+
       sm.command = 'MESSAGE'
       sm.headers = {'message-id'=>'testmessage1', 'content-length'=>msg.length, 'destination'=>'destination1'}
-      
+
       @test_message = ActiveMessaging::Adapters::Stomp::Message.new(sm)
     end
-    
+
     def receive
       @test_message
     end
@@ -73,7 +73,7 @@ class StompTest < Test::Unit::TestCase
   end
 
   def test_initialize
-    i = { :retryMax => 4, 
+    i = { :retryMax => 4,
           :deadLetterQueue=>'/queue/dlq',
           :login=>"",
           :passcode=> "",
@@ -114,7 +114,7 @@ class StompTest < Test::Unit::TestCase
     assert sent_headers.include?("destination:#{@d}"), "No destination header was sent"
     assert_equal 0, @connection.stomp_connection.subscriptions.count
   end
-  
+
   def test_send
     @connection.send(@d, @message, {})
     assert_equal 'SEND', sent_command
@@ -128,13 +128,13 @@ class StompTest < Test::Unit::TestCase
     m = @connection.receive
     assert_equal @message, m.body
   end
-  
+
   def test_received
     m = @connection.receive
     m.headers[:transaction] = 'test-transaction'
     @connection.received m, {:ack=>'client'}
   end
-  
+
   def test_unreceive
     @connection = ActiveMessaging::Adapters::Stomp::Connection.new({:retryMax=>4, :deadLetterQueue=>'/queue/dlq'})
     @connection.stomp_connection.receive = @message

@@ -5,7 +5,7 @@ begin
 rescue Object => e
   loaded = false
 end
-if loaded 
+if loaded
 
 require 'activemessaging/adapters/reliable_msg'
 
@@ -24,7 +24,7 @@ class ReliableMsgTest < Test::Unit::TestCase
     @connection.disconnect unless @connection.nil?
     @qm.stop unless @qm.nil?
   end
-  
+
   def test_subscribe_and_unsubscribe
     assert_nil @connection.subscriptions["#{@d}test_subscribe"]
     @connection.subscribe "#{@d}test_subscribe"
@@ -39,7 +39,7 @@ class ReliableMsgTest < Test::Unit::TestCase
 
   def test_send_and_receive
     @connection.subscribe "#{@d}test_send_and_receive"
-    @connection.send "#{@d}test_send_and_receive", @message 
+    @connection.send "#{@d}test_send_and_receive", @message
     message = @connection.receive
     @connection.received message
     assert_equal @message, message.body
@@ -51,7 +51,7 @@ class ReliableMsgTest < Test::Unit::TestCase
     @connection.subscribe "#{@d}test_send_and_receive2"
     @connection.subscribe "#{@d}test_send_and_receive3"
 
-    @connection.send "#{@d}test_send_and_receive2", "message2" 
+    @connection.send "#{@d}test_send_and_receive2", "message2"
     message = @connection.receive
     @connection.received message
     assert_equal "message2", message.body
@@ -77,7 +77,7 @@ class ReliableMsgTest < Test::Unit::TestCase
       assert true
     end
   end
-  
+
 end
 
 end # if loaded

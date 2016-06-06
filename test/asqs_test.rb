@@ -2,23 +2,23 @@ require File.dirname(__FILE__) + '/test_helper'
 require 'activemessaging/adapters/asqs'
 
 class AsqsTest < Test::Unit::TestCase
-  
+
   class FakeHTTPResponse
     attr_accessor :headers, :body
-    
+
     def to_hash
       @headers
     end
-    
+
     def kind_of? kind
       true
     end
   end
-  
+
   ::ActiveMessaging::Adapters::AmazonSqs::Connection.class_eval do
     attr_accessor :test_response, :test_headers
 
-    DEFAULT_RESPONSE = <<EOM 
+    DEFAULT_RESPONSE = <<EOM
     <ListQueuesResponse xmlns='http://queue.amazonaws.com/doc/2007-05-01/' xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance' xsi:type='ListQueuesResponse'>
     <Queues>
     <QueueUrl>http://queue.amazonaws.com/thisisatestid1/test1</QueueUrl>
@@ -30,14 +30,14 @@ EOM
 
     def http_request h, p, r
       raise test_response if test_response.is_a?(Exception)
-      
+
       resp = FakeHTTPResponse.new
       resp.body = @test_response || DEFAULT_RESPONSE
       resp.headers = @test_headers || {}
       return resp
     end
   end
-  
+
 
   def setup
     @connection = ActiveMessaging::Adapters::AmazonSqs::Connection.new(:reliable=>false, :access_key_id=>'access_key_id', :secret_access_key=>'secret_access_key', :reconnectDelay=>1)
@@ -81,7 +81,7 @@ EOM
     end
   end
 
-  
+
   def test_send_and_receive
     @connection.subscribe @d, :visibility_timeout=>100
     @connection.send @d, @message
@@ -105,7 +105,7 @@ EOM
     message = @connection.receive
     assert_equal @message, message.body
   end
-  
+
   def test_receive_timeout
     @connection.subscribe @d
     @connection.send @d, @message
@@ -121,5 +121,5 @@ EOM
       assert_not_equal toe.message, 'test timeout error'
     end
   end
-  
+
 end

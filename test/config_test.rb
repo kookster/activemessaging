@@ -10,7 +10,7 @@ class ConfigTest < Test::Unit::TestCase
       s.destination :hello_world, '/queue/helloWorld'
     end
   end
-  
+
   def teardown
     ActiveMessaging::Gateway.reset
   end
@@ -28,15 +28,15 @@ class ConfigTest < Test::Unit::TestCase
   end
 
   def test_should_raise_error_if_subscribe_to_queue_that_does_not_exist
-    assert_raises(RuntimeError) do 
+    assert_raises(RuntimeError) do
       TestProcessor.subscribes_to :queue_that_does_not_exist
     end
   end
 
   def test_should_raise_error_if_publishes_to_queue_that_does_not_exist
-    assert_raises(RuntimeError) do 
+    assert_raises(RuntimeError) do
       TestProcessor.publishes_to :queue_that_does_not_exist
     end
   end
-  
+
 end

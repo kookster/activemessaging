@@ -1,13 +1,13 @@
 require File.dirname(__FILE__) + '/test_helper'
 
 class InitializeFilter
-  
+
   attr_accessor :options
 
   def initialize(options)
     @options = options
   end
-  
+
   def process(message, details={})
     puts "ObjectFilter process called!"
   end
@@ -18,7 +18,7 @@ class GatewayTest < Test::Unit::TestCase
     def initialize
       raise "Don't try and construct one of these please"
     end
-    
+
     class << self
       def process(message, details={})
         puts "ClassFilter process called!"
@@ -69,18 +69,18 @@ class GatewayTest < Test::Unit::TestCase
   def teardown
     ActiveMessaging::Gateway.reset
   end
-  
-  
+
+
   def test_create_filter
     filter_obj = ActiveMessaging::Gateway.create_filter('gateway_test/object_filter', {:direction=>:incoming, :name=>'test1'})
     assert filter_obj
     assert filter_obj.is_a?(GatewayTest::ObjectFilter)
-    
+
     filter_obj = ActiveMessaging::Gateway.create_filter('initialize_filter', {:direction=>:incoming, :name=>'test2'})
     assert filter_obj
     assert filter_obj.is_a?(InitializeFilter)
     assert_equal filter_obj.options, {:direction=>:incoming, :name=>'test2'}
-    
+
     filter_obj = ActiveMessaging::Gateway.create_filter(:initialize_filter, {:direction=>:incoming, :name=>'test2'})
     assert filter_obj
     assert filter_obj.is_a?(InitializeFilter)
@@ -91,8 +91,8 @@ class GatewayTest < Test::Unit::TestCase
     assert filter_obj.is_a?(Class)
     assert_equal filter_obj.name, "GatewayTest::ClassFilter"
   end
-  
-  def test_register_adapter 
+
+  def test_register_adapter
     ActiveMessaging::Gateway.register_adapter :test_register_adapter, TestAdapter
     assert_equal TestAdapter, ActiveMessaging::Gateway.adapters[:test_register_adapter]
   end
@@ -109,7 +109,7 @@ class GatewayTest < Test::Unit::TestCase
     assert_equal :hello_world, dest.name
 
     # make sure a dupe name causes an error
-    assert_raises RuntimeError do 
+    assert_raises RuntimeError do
       ActiveMessaging::Gateway.destination :hello_world, '/queue/helloWorld2'
     end
   end
@@ -150,7 +150,7 @@ class GatewayTest < Test::Unit::TestCase
     ActiveMessaging::Gateway.destination :hello_world, '/queue/helloWorld'
     ActiveMessaging::Gateway.publish :hello_world, "test_publish body", self.class, headers={}, timeout=10
     assert_not_nil ActiveMessaging::Gateway.connection.find_message('/queue/helloWorld', "test_publish body")
-    
+
     assert_raise(RuntimeError) do
       ActiveMessaging::Gateway.publish :hello_world, nil, self.class, headers={}, timeout=10
     end
@@ -213,7 +213,7 @@ class GatewayTest < Test::Unit::TestCase
   ## figure out how to test these better - start in a thread perhaps?
   # def test_start
   # end
-  # 
+  #
   # def test_stop
   # end
 

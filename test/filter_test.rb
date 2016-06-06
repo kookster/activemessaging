@@ -7,29 +7,29 @@ module ActiveMessaging #:nodoc:
 end
 
 class FilterTest < Test::Unit::TestCase
-  
+
   class MockFilter < ActiveMessaging::Filter
-    
+
     @@called = {}
     cattr_reader :called
 
     attr_reader :options
-    
+
     def initialize(options)
       @options = options
     end
-    
+
     def process(message, details={})
       @@called[options[:name]] = {:message=>message, :details=>details}
     end
-    
+
     class << self
       include Test::Unit::Assertions
 
       def reset
         @@called = {}
       end
-      
+
       def assert_was_called(name=nil)
         assert @@called.has_key?(name)
       end
@@ -47,17 +47,17 @@ class FilterTest < Test::Unit::TestCase
   class TestProcessor < ActiveMessaging::Processor
     include ActiveMessaging::MessageSender
     #subscribes_to :testqueue
-    
+
     @@was_called = false
     class<<self
       include Test::Unit::Assertions
-      
+
       def assert_was_called
         assert @@was_called
         @@was_called = false
       end
     end
-    
+
     def on_message(message)
       @@was_called = true
     end
@@ -77,7 +77,7 @@ class FilterTest < Test::Unit::TestCase
       d.filter 'filter_test/mock_filter', :direction=>:incoming, :name=>:exclude_except, :except=>:testqueue
       d.filter 'filter_test/mock_filter', :direction=>:incoming, :name=>:include_except, :except=>:foo
     end
-    
+
     TestProcessor.subscribes_to :testqueue
     MockFilter.reset
   end
@@ -105,7 +105,7 @@ class FilterTest < Test::Unit::TestCase
     MockFilter.assert_was_not_called(:outgoing)
     TestProcessor.assert_was_called
   end
-  
+
   def test_filters_gets_called_on_publish
     ActiveMessaging::Gateway.publish :testqueue, "blah blah"
     MockFilter.assert_was_called(:bidirectional)
@@ -116,16 +116,16 @@ class FilterTest < Test::Unit::TestCase
   def test_sets_routing_details_on_send
     sender = TestProcessor.new
     sender.publish :testqueue, "Hi there!"
-  
+
     MockFilter.assert_was_called(:outgoing)
     MockFilter.assert_routing(:outgoing, {:destination=>ActiveMessaging::Gateway.find_queue(:testqueue), :publisher=>FilterTest::TestProcessor, :direction=>:outgoing})
   end
-  
+
   def test_sets_routing_details_on_receive
     ActiveMessaging::Gateway.dispatch ActiveMessaging::TestMessage.new('body', {}, '/queue/test.queue')
-  
+
     MockFilter.assert_was_called(:incoming)
     MockFilter.assert_routing(:incoming, {:destination=>ActiveMessaging::Gateway.find_queue(:testqueue), :receiver=>FilterTest::TestProcessor, :direction=>:incoming})
   end
-  
+
 end

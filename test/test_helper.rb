@@ -8,7 +8,7 @@ else
   ENV['APP_ENV'] = 'test'
   APP_ENV = 'test'
   APP_ROOT = File.dirname(__FILE__) + '/app'
-  
+
   $: << File.expand_path(File.dirname(__FILE__) + '/../lib')
   require 'rubygems'
   require 'active_support/all'
@@ -29,7 +29,7 @@ else
   require 'activemessaging/filter'
   require 'activemessaging/adapters/test'
 end
-  
+
 # load other libraries
 require 'test/unit'
 
