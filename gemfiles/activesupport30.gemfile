@@ -2,7 +2,6 @@
 
 source "https://rubygems.org"
 
-gem "celluloid", "~>0.12", :group => :test, :platform => :ruby
 gem "jruby-activemq", :group => :test, :platform => :jruby
 gem "appraisal", "~>2.1.0", :group => :test
 gem "activesupport", "~> 3.0.8"

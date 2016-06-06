@@ -2,3 +2,5 @@ queues
 activemq-data
 pkg
 .DS_Store
+*.gemfile.lock
+Gemfile.lock
