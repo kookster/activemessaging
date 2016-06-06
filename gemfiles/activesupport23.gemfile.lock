@@ -1,41 +1,26 @@
 PATH
   remote: ..
   specs:
-    activemessaging (0.12.1)
-      activemessaging
-      activesupport (>= 2.3.11)
-      celluloid
+    activemessaging (0.13.1)
+      activesupport
 
 GEM
-  remote: http://rubygems.org/
+  remote: https://rubygems.org/
   specs:
     activesupport (2.3.14)
     appraisal (0.4.1)
       bundler
       rake
-    celluloid (0.11.1)
+    celluloid (0.12.4)
+      facter (>= 1.6.12)
       timers (>= 1.0.0)
-    git (1.2.5)
-    jeweler (1.8.4)
-      bundler (~> 1.0)
-      git (>= 1.2.5)
-      rake
-      rdoc
-    jruby-activemq (5.5.1-java)
-    json (1.7.4)
-    json (1.7.4-java)
-    macaddr (1.6.1)
-      systemu (~> 2.5.0)
+    facter (1.6.18)
+    power_assert (0.3.0)
     rake (0.9.2.2)
-    rdoc (3.12)
-      json (~> 1.4)
-    reliable-msg (1.1.0)
-      uuid (>= 1.0.0)
     stomp (1.2.4)
-    systemu (2.5.2)
-    timers (1.0.1)
-    uuid (2.3.5)
-      macaddr (~> 1.0)
+    test-unit (3.1.9)
+      power_assert
+    timers (1.1.0)
 
 PLATFORMS
   java
@@ -45,7 +30,9 @@ DEPENDENCIES
   activemessaging!
   activesupport (~> 2.3.11)
   appraisal
-  jeweler
+  bundler
+  celluloid (~> 0.12)
   jruby-activemq
-  reliable-msg (~> 1.1)
+  rake
   stomp
+  test-unit

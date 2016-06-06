@@ -15,5 +15,3 @@ end
 appraise "activesupport32" do
   gem "activesupport", "~> 3.2.2"
 end
-
-# vim: filetype=ruby

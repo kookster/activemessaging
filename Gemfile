@@ -1,4 +1,4 @@
-source "http://rubygems.org"
+source "https://rubygems.org"
 
 # We group everything into test because while a default bundle install
 # pulls in this group, Jeweler does not include it when consulting the
@@ -11,9 +11,6 @@ else
 end
 
 gem 'jruby-activemq', :group => :test, :platform => :jruby
-gem 'appraisal', :group => :test
-
-gem 'jeweler', :group => :development
-
+gem 'appraisal', '~>2.1.0', :group => :test
 
 gemspec :development_group => :test
