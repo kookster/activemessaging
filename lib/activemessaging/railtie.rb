@@ -12,8 +12,15 @@ module ActiveMessaging
       # and before each request in development
       if defined? Rails
         ActiveMessaging.logger.info "ActiveMessaging: Rails available: Adding dispatcher prepare callback."
-        config.to_prepare do
-          ActiveMessaging.reload_activemessaging
+        case
+          when Gem::Version.new(Rails.version) < Gem::Version.new('3.0.0')
+            ActionDispatch::Callbacks.to_prepare do
+              ActiveMessaging.reload_activemessaging
+            end
+          else
+            config.to_prepare do
+              ActiveMessaging.reload_activemessaging
+            end
         end
       end
     end
