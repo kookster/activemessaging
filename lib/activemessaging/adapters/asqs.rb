@@ -25,7 +25,7 @@ module ActiveMessaging
 
         #configurable params
         attr_accessor :reconnect_delay, :access_key_id, :secret_access_key, :aws_version, :content_type, :host, :port, :poll_interval, :cache_queue_list, :max_message_size
-      
+
         #generic init method needed by a13g
         def initialize cfg
           raise "Must specify a access_key_id" if (cfg[:access_key_id].nil? || cfg[:access_key_id].empty?)
@@ -49,7 +49,7 @@ module ActiveMessaging
 
           @cache_queue_list = cfg[:cache_queue_list].nil? ? true : cfg[:cache_queue_list]
           @reliable =         cfg[:reliable].nil?         ? true : cfg[:reliable]
-        
+
           #initialize the subscriptions and queues
           @subscriptions = {}
           @queues_by_priority = {}
@@ -132,7 +132,7 @@ module ActiveMessaging
 
               next if queue.nil? || subscription.nil?
               messages = retrieve_messsages(queue, 1, subscription.headers[:visibility_timeout])
-              
+
               if (messages && !messages.empty?)
                 message = messages[0]
               end
@@ -179,14 +179,14 @@ module ActiveMessaging
         def unreceive message, headers={}
           return true
         end
-      
+
         protected
-      
+
         def create_queue(name)
           validate_new_queue name
       		response = make_request('CreateQueue', nil, {'QueueName'=>name})
           add_queue(response.get_text("//QueueUrl")) unless response.nil?
-        end      	
+        end
 
         def delete_queue queue
           validate_queue queue
@@ -199,7 +199,7 @@ module ActiveMessaging
       		response = make_request('ListQueues', nil, params)
           response.nil? ? [] : response.nodes("//QueueUrl").collect{ |n| add_queue(n.text) }
         end
-      
+
         def get_queue_attributes(queue, attribute='All')
           validate_get_queue_attribute(attribute)
           params = {'AttributeName'=>attribute}
@@ -247,7 +247,7 @@ module ActiveMessaging
           response = make_request('ReceiveMessage', "#{queue.queue_url}", params)
           response.nodes("//Message").collect{ |n| Message.from_element n, response, queue } unless response.nil?
         end
-      
+
         def delete_message message
           response = make_request('DeleteMessage', "#{message.queue.queue_url}", {'ReceiptHandle'=>message.receipt_handle})
         end
@@ -255,7 +255,7 @@ module ActiveMessaging
       	def make_request(action, url=nil, params = {})
           # puts "make_request a=#{action} u=#{url} p=#{params}"
       	  url ||= @aws_url
-    	  
+
       		# Add Actions
       		params['Action'] = action
       		params['Version'] = @aws_version
@@ -274,7 +274,7 @@ module ActiveMessaging
           query_params = params.collect { |key, value| key + "=" + CGI.escape(value.to_s) }.join("&")
 
           # Put these together to get the request query string
-          request_url = "#{url}?#{query_params}"
+          request_url = "#{url}/?#{query_params}"
           # puts "request_url = #{request_url}"
           request = Net::HTTP::Get.new(request_url)
 
@@ -312,9 +312,9 @@ module ActiveMessaging
           raise response.errors if (response && response.errors?)
           response
         end
-      
+
         private
-      
+
         # internal data structure methods
         def add_queue(url)
           q = Queue.from_url url
@@ -379,14 +379,14 @@ module ActiveMessaging
 
       class SQSResponse
         attr_accessor :headers, :doc, :http_response
-      
+
         def initialize response
           # puts "response.body = #{response.body}"
           @http_response = response
           @headers = response.to_hash()
           @doc = REXML::Document.new(response.body)
         end
-    
+
         def message_type
           return doc ? doc.root.name : ''
         end
@@ -409,16 +409,16 @@ module ActiveMessaging
 
           return msg
         end
-    
+
         def get_text(xpath,default='')
           e = REXML::XPath.first( doc, xpath)
           e.nil? ? default : e.text
         end
-    
+
         def each_node(xp)
           REXML::XPath.each(doc.root, xp) {|n| yield n}
         end
-    
+
         def nodes(xp)
           doc.elements.to_a(xp)
         end
@@ -426,12 +426,12 @@ module ActiveMessaging
 
       class Subscription
         attr_accessor :destination, :headers, :count, :priority
-      
+
         def initialize(destination, headers={}, count=1)
           @priority = headers.delete(:priority) || 1001
           @destination, @headers, @count = destination, headers, count
         end
-      
+
         def add
           @count += 1
         end
@@ -448,7 +448,7 @@ module ActiveMessaging
           u = URI.parse(url)
           name = u.path.gsub(/\//, "")
           domain  = u.host
-          return Queue.new(name,domain) 
+          return Queue.new(name,domain)
         end
 
         def queue_url
@@ -467,11 +467,11 @@ module ActiveMessaging
       # based on stomp message, has pointer to the SQSResponseObject
       class Message < ActiveMessaging::BaseMessage
         attr_accessor :response, :queue, :md5_of_body, :receipt_handle
-      
+
         def self.from_element e, response, queue
           Message.new(e.elements['Body'].text, response.headers, e.elements['MessageId'].text, e.elements['MD5OfBody'].text, e.elements['ReceiptHandle'].text, response, queue)
         end
-    
+
         def initialize body, headers, id, md5_of_body, receipt_handle, response, queue
           super(body, id, headers, queue.name)
           @md5_of_body, @receipt_handle, @response, @queue =  md5_of_body, receipt_handle, response, queue
@@ -481,7 +481,7 @@ module ActiveMessaging
           "<AmazonSQS::Message id='#{id}' body='#{body}' headers='#{headers.inspect}' response='#{response}'>"
         end
       end
-   
+
     end
   end
 end
