@@ -254,7 +254,7 @@ module ActiveMessaging
 
       	def make_request(action, url=nil, params = {})
           # puts "make_request a=#{action} u=#{url} p=#{params}"
-      	  url ||= @aws_url
+      	  url ||= (@aws_url + "/")
 
       		# Add Actions
       		params['Action'] = action
@@ -274,7 +274,7 @@ module ActiveMessaging
           query_params = params.collect { |key, value| key + "=" + CGI.escape(value.to_s) }.join("&")
 
           # Put these together to get the request query string
-          request_url = "#{url}/?#{query_params}"
+          request_url = "#{url}?#{query_params}"
           # puts "request_url = #{request_url}"
           request = Net::HTTP::Get.new(request_url)
 
