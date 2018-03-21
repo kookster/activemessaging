@@ -37,8 +37,8 @@ module ActiveMessaging #:nodoc:
       publish_without_reset(destination_name, message, headers, timeout)
     end
 
-    alias_method_chain :publish, :reset
-
+    alias_method :publish_without_reset, :publish
+    alias_method :publish, :publish_with_reset
   end
 
   class TestMessage < ActiveMessaging::BaseMessage
