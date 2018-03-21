@@ -1,7 +1,7 @@
-require File.dirname(__FILE__) + '/test_helper'
+require "#{File.dirname(__FILE__)}/test_helper"
 require 'activemessaging/adapters/asqs'
 
-class AsqsTest < Test::Unit::TestCase
+class AsqsTest < Minitest::Test
 
   class FakeHTTPResponse
     attr_accessor :headers, :body
@@ -54,18 +54,14 @@ EOM
 
     @connection = ActiveMessaging::Adapters::AmazonSqs::Connection.new(:reliable=>false, :access_key_id=>'access_key_id', :secret_access_key=>'secret_access_key', :max_message_size => 10)
 
-    assert_nothing_raised do
-      @connection.send @d, @message
-    end
+    @connection.send @d, @message
 
     large_message = "m" * 1024 * 9
-    assert_nothing_raised do
-      @connection.send @d, large_message
-    end
+    @connection.send @d, large_message
     large_message = nil
 
     large_message = "m" * 1024 * 11
-    assert_raise(RuntimeError) do
+    assert_raises(RuntimeError) do
       @connection.send @d, large_message
     end
     large_message = nil
@@ -73,10 +69,9 @@ EOM
   end
 
   def test_allow_underscore_and_dash
-    assert_nothing_raised do
-      @connection.subscribe 'name-name_dash'
-    end
-    assert_raise(RuntimeError) do
+    @connection.subscribe 'name-name_dash'
+
+    assert_raises(RuntimeError) do
       @connection.subscribe '!@#$%^&'
     end
   end
@@ -111,15 +106,14 @@ EOM
     @connection.send @d, @message
 
     @connection.test_headers = {:destination=>@d}
-    @connection.test_response = TimeoutError.new('test timeout error')
+    @connection.test_response = Timeout::Error.new('test timeout error')
     @connection.reliable = true
     begin
       Timeout.timeout 2 do
         @connection.receive
       end
     rescue Timeout::Error=>toe
-      assert_not_equal toe.message, 'test timeout error'
+      refute_equal toe.message, 'test timeout error'
     end
   end
-
 end

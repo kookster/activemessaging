@@ -1,5 +1,4 @@
-require File.dirname(__FILE__) + '/test_helper'
-require 'activemessaging/adapters/stomp'
+require "#{File.dirname(__FILE__)}/test_helper"
 
 loaded = true
 begin
@@ -8,6 +7,8 @@ rescue Object => e
   loaded = false
 end
 if loaded #only run these test if stomp gem installed
+
+require 'activemessaging/adapters/stomp'
 
 
 class FakeTCPSocket
@@ -51,7 +52,7 @@ module Stomp
   end
 end
 
-class StompTest < Test::Unit::TestCase
+class StompTest < Minitest::Test
 
   def setup
     @connection = ActiveMessaging::Adapters::Stomp::Connection.new({})
