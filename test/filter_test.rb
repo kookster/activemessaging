@@ -1,4 +1,4 @@
-require File.dirname(__FILE__) + '/test_helper'
+require "#{File.dirname(__FILE__)}/test_helper"
 require 'activemessaging/filter'
 
 module ActiveMessaging #:nodoc:
@@ -6,8 +6,7 @@ module ActiveMessaging #:nodoc:
   end
 end
 
-class FilterTest < Test::Unit::TestCase
-
+class FilterTest < Minitest::Test
   class MockFilter < ActiveMessaging::Filter
 
     @@called = {}
@@ -24,22 +23,20 @@ class FilterTest < Test::Unit::TestCase
     end
 
     class << self
-      include Test::Unit::Assertions
-
       def reset
         @@called = {}
       end
 
       def assert_was_called(name=nil)
-        assert @@called.has_key?(name)
+        raise unless @@called.has_key?(name)
       end
 
       def assert_was_not_called(name=nil)
-        assert !@@called.has_key?(name)
+        raise if @@called.has_key?(name)
       end
 
       def assert_routing(name, routing)
-        assert_equal routing, @@called[name][:details]
+        raise unless routing == @@called[name][:details]
       end
     end
   end
@@ -50,10 +47,8 @@ class FilterTest < Test::Unit::TestCase
 
     @@was_called = false
     class<<self
-      include Test::Unit::Assertions
-
       def assert_was_called
-        assert @@was_called
+        raise unless @@was_called
         @@was_called = false
       end
     end
@@ -127,5 +122,4 @@ class FilterTest < Test::Unit::TestCase
     MockFilter.assert_was_called(:incoming)
     MockFilter.assert_routing(:incoming, {:destination=>ActiveMessaging::Gateway.find_queue(:testqueue), :receiver=>FilterTest::TestProcessor, :direction=>:incoming})
   end
-
 end

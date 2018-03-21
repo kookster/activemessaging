@@ -1,4 +1,4 @@
-require File.dirname(__FILE__) + '/test_helper'
+require "#{File.dirname(__FILE__)}/test_helper"
 require 'activemessaging/trace_filter'
 
 module ActiveMessaging #:nodoc:
@@ -20,7 +20,7 @@ class FakeMessage < ActiveMessaging::BaseMessage
   end
 end
 
-class TracerTest < Test::Unit::TestCase
+class TracerTest < Minitest::Test
   include ActiveMessaging::TestHelper
 
   def setup

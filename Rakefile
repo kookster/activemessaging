@@ -1,25 +1,12 @@
-require "rubygems"
-require "bundler/gem_tasks"
-require "bundler/setup"
-
-require 'rake'
+require 'bundler/gem_tasks'
 require 'rake/testtask'
-require 'rdoc/rdoc'
-
 require 'appraisal'
 
-desc 'Default: run unit tests.'
-task :default => :test
-
-desc 'Test the ActiveMessaging plugin.'
-Rake::TestTask.new(:test) do |t|
-  t.libs << 'lib'
-  t.pattern = 'test/**/*_test.rb'
+Rake::TestTask.new do |t|
+  t.libs.push 'lib'
+  t.libs.push 'test'
+  t.test_files = FileList['test/**/*_test.rb']
   t.verbose = true
 end
 
-desc 'Generate documentation for the ActiveMessaging plugin.'
-task :rdoc do
-  rm_rf 'doc'
-  RDoc::RDoc.new.document(%w(--line-numbers --inline-source --title ActiveMessaging README lib))
-end
+task :default => :test

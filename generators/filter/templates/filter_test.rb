@@ -1,7 +1,7 @@
 require File.dirname(__FILE__) + '/../test_helper'
 require File.dirname(__FILE__) + '/../../vendor/plugins/activemessaging/lib/activemessaging/test_helper'
 
-class <%= class_name %>FilterTest < Test::Unit::TestCase
+class <%= class_name %>FilterTest < Minitest::Test
   include ActiveMessaging::TestHelper
   
   def setup

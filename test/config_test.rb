@@ -1,10 +1,9 @@
-require File.dirname(__FILE__) + '/test_helper'
+require "#{File.dirname(__FILE__)}/test_helper"
 
 class TestProcessor < ActiveMessaging::Processor
 end
 
-class ConfigTest < Test::Unit::TestCase
-
+class ConfigTest < Minitest::Test
   def setup
     ActiveMessaging::Gateway.define do |s|
       s.destination :hello_world, '/queue/helloWorld'
@@ -38,5 +37,4 @@ class ConfigTest < Test::Unit::TestCase
       TestProcessor.publishes_to :queue_that_does_not_exist
     end
   end
-
 end

@@ -1,4 +1,4 @@
-require File.dirname(__FILE__) + '/test_helper'
+require "#{File.dirname(__FILE__)}/test_helper"
 
 class InitializeFilter
 
@@ -13,7 +13,7 @@ class InitializeFilter
   end
 end
 
-class GatewayTest < Test::Unit::TestCase
+class GatewayTest < Minitest::Test
   class ClassFilter
     def initialize
       raise "Don't try and construct one of these please"
@@ -127,7 +127,7 @@ class GatewayTest < Test::Unit::TestCase
     assert_equal TestProcessor, sub.processor_class
 
     ActiveMessaging::Gateway.subscribe
-    assert_not_nil ActiveMessaging::Gateway.connection.find_subscription(sub.destination.value)
+    refute_nil ActiveMessaging::Gateway.connection.find_subscription(sub.destination.value)
 
     ActiveMessaging::Gateway.unsubscribe
     assert_nil ActiveMessaging::Gateway.connection.find_subscription(sub.destination.value)
@@ -149,12 +149,12 @@ class GatewayTest < Test::Unit::TestCase
   def test_publish
     ActiveMessaging::Gateway.destination :hello_world, '/queue/helloWorld'
     ActiveMessaging::Gateway.publish :hello_world, "test_publish body", self.class, headers={}, timeout=10
-    assert_not_nil ActiveMessaging::Gateway.connection.find_message('/queue/helloWorld', "test_publish body")
+    refute_nil ActiveMessaging::Gateway.connection.find_message('/queue/helloWorld', "test_publish body")
 
-    assert_raise(RuntimeError) do
+    assert_raises(RuntimeError) do
       ActiveMessaging::Gateway.publish :hello_world, nil, self.class, headers={}, timeout=10
     end
-    assert_raise(RuntimeError) do
+    assert_raises(RuntimeError) do
       ActiveMessaging::Gateway.publish :hello_world, '', self.class, headers={}, timeout=10
     end
   end
@@ -200,7 +200,7 @@ class GatewayTest < Test::Unit::TestCase
     ActiveMessaging::Gateway.destination :hello_world, '/queue/helloWorld'
     ActiveMessaging::Gateway.publish :hello_world, "test_publish body", self.class, headers={}, timeout=10
     msg = ActiveMessaging::Gateway.receive :hello_world, self.class, headers={}, timeout=10
-    assert_not_nil ActiveMessaging::Gateway.connection.find_message('/queue/helloWorld', "test_publish body")
+    refute_nil ActiveMessaging::Gateway.connection.find_message('/queue/helloWorld', "test_publish body")
   end
 
   # def test_reload
