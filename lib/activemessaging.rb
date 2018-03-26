@@ -36,11 +36,11 @@ module ActiveMessaging
   end
 
   def self.app_root
-    @@app_root ||= (ENV['APP_ROOT'] || (defined?(::Rails) && ::Rails.root) || ENV['RAILS_ROOT'] || File.expand_path(Dir.pwd))
+    @@app_root ||= ((defined?(::Rails) && ::Rails.root) || ENV['RAILS_ROOT'] || ENV['APP_ROOT'] || File.expand_path(Dir.pwd))
   end
 
   def self.app_env
-    @@app_env  ||= (ENV['APP_ENV']  || (defined?(::Rails) && ::Rails.env)  || ENV['RAILS_ENV']  || 'development')
+    @@app_env  ||= ((defined?(::Rails) && ::Rails.env)  || ENV['RAILS_ENV']  || ENV['APP_ENV']  || 'development')
   end
 
   def self.load_extensions
@@ -64,15 +64,15 @@ module ActiveMessaging
   end
 
   def self.load_config
-    # Skip loading config if there are no custom processors as the generator 
+    # Skip loading config if there are no custom processors as the generator
     # is likely running since application_processor.rb and another processor
-    # should exist when running rails. 
+    # should exist when running rails.
     if Dir["#{app_root}/app/processors/*.rb"].size() <= 1
 	return
     end
     path = File.expand_path("#{app_root}/config/messaging.rb")
     begin
-      load path 
+      load path
     rescue
       raise $!, " ActiveMessaging: problems trying to load '#{path}': \n\t#{$!.message}"
     end
