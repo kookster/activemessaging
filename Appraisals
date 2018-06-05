@@ -1,6 +1,7 @@
 appraise "activesupport23" do
   gem "activesupport", "~> 2.3.11"
   gem "rake", "~> 0.8.7"
+  gem "test-unit", "~> 1.2.3"
 end
 
 appraise "activesupport30" do
