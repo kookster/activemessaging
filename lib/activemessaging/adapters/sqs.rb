@@ -21,8 +21,9 @@ module ActiveMessaging
         QUEUE_NAME_LENGTH    = 1..80
         VISIBILITY_TIMEOUT   = 0..(24 * 60 * 60)
         NUMBER_OF_MESSAGES   = 1..255
-        GET_QUEUE_ATTRIBUTES = ['All', 'ApproximateNumberOfMessages', 'ApproximateNumberOfMessagesDelayed', 'ApproximateNumberOfMessagesNotVisible', 'CreatedTimestamp', 'DelaySeconds', 'LastModifiedTimestamp', 'MaximumMessageSize', 'MessageRetentionPeriod', 'Policy', 'QueueArn', 'ReceiveMessageWaitTimeSeconds', 'RedrivePolicy', 'VisibilityTimeout', 'KmsMasterKeyId', 'KmsDataKeyReusePeriodSeconds', 'FifoQueue', 'ContentBasedDeduplication']
-        SET_QUEUE_ATTRIBUTES = ['DelaySeconds', 'MaximumMessageSize', 'MessageRetentionPeriod', 'Policy', 'ReceiveMessageWaitTimeSeconds', 'RedrivePolicy', 'VisibilityTimeout', 'KmsMasterKeyId', 'KmsDataKeyReusePeriodSeconds', 'ContentBasedDeduplication']
+        GET_QUEUE_ATTRIBUTES = ['All', 'ApproximateNumberOfMessages', 'ApproximateNumberOfMessagesDelayed', 'ApproximateNumberOfMessagesNotVisible', 'CreatedTimestamp', 'DelaySeconds', 'LastModifiedTimestamp', 'MaximumMessageSize', 'MessageRetentionPeriod', 'Policy', 'QueueArn', 'ReceiveMessageWaitTimeSeconds', 'RedrivePolicy', 'VisibilityTimeout', 'KmsMasterKeyId', 'KmsDataKeyReusePeriodSeconds', 'FifoQueue', 'ContentBasedDeduplication'].freeze
+        SET_QUEUE_ATTRIBUTES = ['DelaySeconds', 'MaximumMessageSize', 'MessageRetentionPeriod', 'Policy', 'ReceiveMessageWaitTimeSeconds', 'RedrivePolicy', 'VisibilityTimeout', 'KmsMasterKeyId', 'KmsDataKeyReusePeriodSeconds', 'ContentBasedDeduplication'].freeze
+        URI_ENCODING_REPLACEMENTS = { '%7E' => '~', '+' => '%20' }.freeze
 
         #configurable params
         attr_accessor :reconnect_delay, :access_key_id, :secret_access_key, :aws_version, :content_type, :host, :port, :poll_interval, :cache_queue_list, :max_message_size
@@ -284,16 +285,16 @@ module ActiveMessaging
             param = param.encode('UTF-8')
           end
 
-          CGI::escape(param)
-            .gsub('%7E', '~')
-            .gsub('+', '%20')
+          param = CGI::escape(param)
+          URI_ENCODING_REPLACEMENTS.each { |k, v| param = param.gsub(k, v) }
+          param
         end
 
         def http_request h, p, r
           http = Net::HTTP.new(h, p)
           # http.set_debug_output(STDOUT)
 
-          http.use_ssl = true if 'https' == @protocol
+          http.use_ssl = 'https' == @protocol
 
           # Don't carp about SSL cert verification
           http.verify_mode = OpenSSL::SSL::VERIFY_NONE
