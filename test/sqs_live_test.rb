@@ -57,7 +57,7 @@ if ENV['AWS_ACCESS_KEY'] && ENV['AWS_SECRET_KEY']
     end
 
     def test_send_messsage_special_chars
-      m = { 'message' => 'specials !@#$%^&*()-_=+;:\'"\\/?,.<>', 'when' => Time.now, 'num' => 20 }
+      m = { 'message' => 'specials ~!@#$%^&*()-_=+;:\'"\\/?,.<>', 'when' => Time.now, 'num' => 20 }
       q = @connection.queues[@test_queue_name]
       response = @connection.send_messsage(q, m.to_json)
       assert_not_nil response
