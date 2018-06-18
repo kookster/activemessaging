@@ -68,7 +68,7 @@ module ActiveMessaging
     # is likely running since application_processor.rb and another processor
     # should exist when running rails.
     if Dir["#{app_root}/app/processors/*.rb"].size() <= 1
-	return
+      return
     end
     path = File.expand_path("#{app_root}/config/messaging.rb")
     begin
