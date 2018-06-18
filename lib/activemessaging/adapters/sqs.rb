@@ -7,7 +7,6 @@ require 'cgi'
 require 'time'
 require 'uri'
 require 'rexml/document'
-require 'erb'
 
 require 'activemessaging/adapters/base'
 require 'activemessaging/adapters/aws4_signer'
@@ -236,7 +235,7 @@ module ActiveMessaging
 
           # Sort and encode query params
           query_params = params.keys.sort.map do |key|
-            key + "=" + ERB::Util.url_encode(params[key].to_s)
+            key + "=" + url_encode(params[key])
           end
 
           # Put these together with the uri to get the request query string
@@ -244,8 +243,8 @@ module ActiveMessaging
 
           # Create the request
           init_headers = {
-            "Date" => Time.now.utc.iso8601,
-            "Host" => @host
+            'Date' => Time.now.utc.iso8601,
+            'Host' => @host
           }
           request = Net::HTTP::Get.new(request_url, init_headers)
 
@@ -259,7 +258,7 @@ module ActiveMessaging
           headers = {}
           request.canonical_each { |k, v| headers[k] = v }
 
-          signature = signer.sign('GET', URI.parse(request_url), headers)
+          signature = signer.sign('GET', URI.parse(request_url), headers, nil, false)
           signature.each { |k, v| request[k] = v }
 
           # Make the request
@@ -278,11 +277,23 @@ module ActiveMessaging
           end
         end
 
+        def url_encode(param)
+          param = param.to_s
+
+          if param.respond_to?(:encode)
+            param = param.encode('UTF-8')
+          end
+
+          CGI::escape(param)
+            .gsub('%7E', '~')
+            .gsub('+', '%20')
+        end
+
         def http_request h, p, r
           http = Net::HTTP.new(h, p)
           # http.set_debug_output(STDOUT)
 
-          http.use_ssl = true if "https" == @protocol
+          http.use_ssl = true if 'https' == @protocol
 
           # Don't carp about SSL cert verification
           http.verify_mode = OpenSSL::SSL::VERIFY_NONE
@@ -290,7 +301,7 @@ module ActiveMessaging
         end
 
         def check_errors(response)
-          raise "http response was nil" if (response.nil?)
+          raise 'http response was nil' if (response.nil?)
           raise response.errors if (response && response.errors?)
           response
         end
