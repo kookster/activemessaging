@@ -7,7 +7,6 @@ require 'cgi'
 require 'time'
 require 'uri'
 require 'rexml/document'
-require 'erb'
 
 require 'activemessaging/adapters/base'
 require 'activemessaging/adapters/aws4_signer'
@@ -22,8 +21,9 @@ module ActiveMessaging
         QUEUE_NAME_LENGTH    = 1..80
         VISIBILITY_TIMEOUT   = 0..(24 * 60 * 60)
         NUMBER_OF_MESSAGES   = 1..255
-        GET_QUEUE_ATTRIBUTES = ['All', 'ApproximateNumberOfMessages', 'ApproximateNumberOfMessagesDelayed', 'ApproximateNumberOfMessagesNotVisible', 'CreatedTimestamp', 'DelaySeconds', 'LastModifiedTimestamp', 'MaximumMessageSize', 'MessageRetentionPeriod', 'Policy', 'QueueArn', 'ReceiveMessageWaitTimeSeconds', 'RedrivePolicy', 'VisibilityTimeout', 'KmsMasterKeyId', 'KmsDataKeyReusePeriodSeconds', 'FifoQueue', 'ContentBasedDeduplication']
-        SET_QUEUE_ATTRIBUTES = ['DelaySeconds', 'MaximumMessageSize', 'MessageRetentionPeriod', 'Policy', 'ReceiveMessageWaitTimeSeconds', 'RedrivePolicy', 'VisibilityTimeout', 'KmsMasterKeyId', 'KmsDataKeyReusePeriodSeconds', 'ContentBasedDeduplication']
+        GET_QUEUE_ATTRIBUTES = ['All', 'ApproximateNumberOfMessages', 'ApproximateNumberOfMessagesDelayed', 'ApproximateNumberOfMessagesNotVisible', 'CreatedTimestamp', 'DelaySeconds', 'LastModifiedTimestamp', 'MaximumMessageSize', 'MessageRetentionPeriod', 'Policy', 'QueueArn', 'ReceiveMessageWaitTimeSeconds', 'RedrivePolicy', 'VisibilityTimeout', 'KmsMasterKeyId', 'KmsDataKeyReusePeriodSeconds', 'FifoQueue', 'ContentBasedDeduplication'].freeze
+        SET_QUEUE_ATTRIBUTES = ['DelaySeconds', 'MaximumMessageSize', 'MessageRetentionPeriod', 'Policy', 'ReceiveMessageWaitTimeSeconds', 'RedrivePolicy', 'VisibilityTimeout', 'KmsMasterKeyId', 'KmsDataKeyReusePeriodSeconds', 'ContentBasedDeduplication'].freeze
+        URI_ENCODING_REPLACEMENTS = { '%7E' => '~', '+' => '%20' }.freeze
 
         #configurable params
         attr_accessor :reconnect_delay, :access_key_id, :secret_access_key, :aws_version, :content_type, :host, :port, :poll_interval, :cache_queue_list, :max_message_size
@@ -236,7 +236,7 @@ module ActiveMessaging
 
           # Sort and encode query params
           query_params = params.keys.sort.map do |key|
-            key + "=" + ERB::Util.url_encode(params[key].to_s)
+            key + "=" + url_encode(params[key])
           end
 
           # Put these together with the uri to get the request query string
@@ -244,8 +244,8 @@ module ActiveMessaging
 
           # Create the request
           init_headers = {
-            "Date" => Time.now.utc.iso8601,
-            "Host" => @host
+            'Date' => Time.now.utc.iso8601,
+            'Host' => @host
           }
           request = Net::HTTP::Get.new(request_url, init_headers)
 
@@ -259,7 +259,7 @@ module ActiveMessaging
           headers = {}
           request.canonical_each { |k, v| headers[k] = v }
 
-          signature = signer.sign('GET', URI.parse(request_url), headers)
+          signature = signer.sign('GET', URI.parse(request_url), headers, nil, false)
           signature.each { |k, v| request[k] = v }
 
           # Make the request
@@ -278,11 +278,23 @@ module ActiveMessaging
           end
         end
 
+        def url_encode(param)
+          param = param.to_s
+
+          if param.respond_to?(:encode)
+            param = param.encode('UTF-8')
+          end
+
+          param = CGI::escape(param)
+          URI_ENCODING_REPLACEMENTS.each { |k, v| param = param.gsub(k, v) }
+          param
+        end
+
         def http_request h, p, r
           http = Net::HTTP.new(h, p)
           # http.set_debug_output(STDOUT)
 
-          http.use_ssl = true if "https" == @protocol
+          http.use_ssl = 'https' == @protocol
 
           # Don't carp about SSL cert verification
           http.verify_mode = OpenSSL::SSL::VERIFY_NONE
@@ -290,7 +302,7 @@ module ActiveMessaging
         end
 
         def check_errors(response)
-          raise "http response was nil" if (response.nil?)
+          raise 'http response was nil' if (response.nil?)
           raise response.errors if (response && response.errors?)
           response
         end

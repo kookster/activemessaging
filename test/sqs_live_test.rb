@@ -46,8 +46,18 @@ if ENV['AWS_ACCESS_KEY'] && ENV['AWS_SECRET_KEY']
       assert_equal secs, attrs['DelaySeconds'].to_i
     end
 
-    def test_send_messsage
-      m = { 'bunny' => 'foo foo', 'when' => Time.now, "num" => 20 }
+    def test_send_messsage_json
+      m = { 'bunny' => 'foo foo', 'when' => Time.now, 'num' => 20 }
+      q = @connection.queues[@test_queue_name]
+      response = @connection.send_messsage(q, m.to_json)
+      assert_not_nil response
+
+      response = @connection.send_messsage(q, m.to_yaml)
+      assert_not_nil response
+    end
+
+    def test_send_messsage_special_chars
+      m = { 'message' => 'specials ~!@#$%^&*()-_=+;:\'"\\/?,.<>', 'when' => Time.now, 'num' => 20 }
       q = @connection.queues[@test_queue_name]
       response = @connection.send_messsage(q, m.to_json)
       assert_not_nil response
