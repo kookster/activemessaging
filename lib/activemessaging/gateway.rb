@@ -368,7 +368,7 @@ module ActiveMessaging
       end
 
       def load_connection_configuration(label='default')
-        @broker_yml = YAML::load(ERB.new(IO.read(File.join(ActiveMessaging.app_root, 'config', 'broker.yml'))).result) if @broker_yml.nil?
+        @broker_yml = YAML::load(ERB.new(IO.read(File.join(ActiveMessaging.app_root, 'config', 'broker.yml'))).result, aliases: true) if @broker_yml.nil?
         if label == 'default'
           config = @broker_yml[ActiveMessaging.app_env].symbolize_keys
         else
